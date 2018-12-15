@@ -1,0 +1,8 @@
+<Message>
+    <MessageID></MessageID>
+    <OperationType>Update</OperationType>
+    <Inventory>
+        <SKU></SKU>
+        <Quantity></Quantity>
+    </Inventory>
+</Message>

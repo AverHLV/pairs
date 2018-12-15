@@ -1,0 +1,21 @@
+{% extends 'main.html' %}
+{% load pairs_extras %}
+{% block content %}
+    <div class="row"><div class="column">
+        <table>
+            <tr>
+                <th>Price interval</th>
+                <th>Coefficient</th>
+            </tr>
+
+            {% for interval in intervals %}
+                <tr>
+                    <td>{{ interval|list_item:0 }}</td>
+                    <td>{{ interval|list_item:1|floatformat:2 }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <br>
+        <p><big>(eBay price * coefficient / {{ profit_percentage }}) + {{ buffer }} must be lower than Amazon price.</big></p>
+    </div></div>
+{% endblock %}

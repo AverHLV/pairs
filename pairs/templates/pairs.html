@@ -1,0 +1,146 @@
+{% extends 'main.html' %}
+{% load pairs_extras %}
+{% block content %}
+    {% if user.is_authenticated and user.email_checked %}
+        {% if not search %}
+            {% if 0 < progress and progress < 30 %}
+                {% define "#c0804e" as pro_color %}
+            {% elif 30 <= progress and progress < 60 %}
+                {% define "#bec04e" as pro_color %}
+            {% else %}
+                {% define "#4ec052" as pro_color %}
+            {% endif %}
+
+            <div class="progress" data-label="{{ user.pairs_count }} / {{ pair_min }}">
+                <span class="value" style="width: {{ progress }}%; background-color: {{ pro_color }}"></span>
+            </div>
+        {% endif %}
+
+        <div class="row"><div class="column">
+            {% if pairs %}
+                <table id="pairs">
+                    <tr>
+                        {% if user.is_moderator %}
+                            <th>Check</th>
+                        {% endif %}
+
+                        <th>ASIN</th>
+                        <th>eBay ids</th>
+                        <th>Status</th>
+
+                        {% if show_reasons %}
+                            <th>Reason</th>
+                        {% endif %}
+
+                        <th>Count</th>
+
+                        {% if user.is_moderator %}
+                            <th>Owner</th>
+                        {% endif %}
+                    </tr>
+
+                    {% for pair in pairs %}
+                        <tr>
+                            {% if user.is_moderator %}
+                                {% if not pair.checked %}
+                                    <td id="{{ pair.id }}_b">
+                                        <a onclick="modal({{ reasons }}, {{ pair.id }});" class="tooltips">
+                                            <span>Set status for this pair</span>
+                                            <button type="button">set</button>
+                                        </a>
+                                    </td>
+                                {% else %}
+                                    <td></td>
+                                {% endif %}
+                            {% endif %}
+
+                            {% define "https://www.amazon.com/dp/"|addstr:pair.asin|addstr:"/" as am_link %}
+                            <td><a href="{{ am_link }}" target="_blank">{{ pair.asin }}</a></td>
+                            <td>
+                                {% for eid in pair.ebay_ids|splitstr %}
+                                    {% define "https://www.ebay.com/itm/"|addstr:eid|addstr:"/" as eb_link %}
+                                    <a href="{{ eb_link }}" target="_blank">{{ eid }};</a>
+                                {% endfor %}
+
+                                <a class="tooltips" href="/change_pair/{{ pair.id }}/" target="_blank">
+                                    <span>Update this pair</span>
+                                    <button type="button">→</button>
+                                </a>
+                            </td>
+
+                            {% if not pair.checked %}
+                                {% define "#C8D0AF" as status %}
+                                {% define "This item yet not checked" as title %}
+                            {% elif pair.checked == 1 %}
+                                {% define "#00B64F" as status %}
+                                {% define "This item is checked" as title %}
+                            {% else %}
+                                {% define "#A60000" as status %}
+                                {% define "This item has been checked as unsuitable, see 'Reasons' column" as title %}
+                            {% endif %}
+
+                            <td id="{{ pair.id }}" bgcolor="{{ status }}" title="{{ title }}"></td>
+
+                            {% if show_reasons %}
+                                {% if pair.checked > 1 %}
+                                    {% define reasons|get_item:pair.checked as reason %}
+                                {% else %}
+                                    {% define '' as reason %}
+                                {% endif %}
+
+                                <td id="{{ pair.id }}_r">{{ reason }}</td>
+                            {% endif %}
+
+                            {% if 0 <= pair.quantity and pair.quantity < 5 %}
+                                {% define "#c0804e" as q_color %}
+                            {% elif 5 <= pair.quantity and pair.quantity <= 10 %}
+                                {% define "#bec04e" as q_color %}
+                            {% else %}
+                                {% define "#4ec052" as q_color %}
+                            {% endif %}
+
+                            <td style="color: {{ q_color }};"><b>{{ pair.quantity }}</b></td>
+
+                            {% if user.is_moderator %}
+                                <td>{{ pair.owner.username }}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <big>{{ empty }}</big>
+            {% endif %}
+        </div></div>
+
+        {% if pairs and not search %}
+            <div class="paginator">
+                {% if pairs.has_previous %}
+                    <a href="/page/{{ pairs.previous_page_number }}/">&laquo;</a>
+                {% else %}
+                    &laquo;
+                {% endif %}
+
+                {% for page in pairs.paginator.page_range %}
+                    {% if page < page_range %}
+                        {% if page == current_page %}
+                            {{ page }}
+                        {% else %}
+                            <a href="/page/{{ forloop.counter }}/">{{ page }}</a>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if pairs.has_next %}
+                    <a href="/page/{{ pairs.next_page_number }}/">&raquo;</a>
+                {% else %}
+                    &raquo;
+                {% endif %}
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="row"><div class="column">
+            <big>Please, log in or sign up.</big>
+        </div></div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'main.html' %}
+{% load pairs_extras %}
+{% load crispy_forms_tags %}
+{% block content %}
+    {% if not search %}
+        <div class="profit">
+            <span id="profit_span" style="padding: 15px;">Total profit: {{ user.profit|floatformat:2 }}$</span>
+        </div>
+    {% endif %}
+
+    <div class="row"><div class="column">
+        <div style="overflow-x:auto;">
+            {% if not search %}
+                <form id="order-filter" onchange="document.getElementById('order-filter').submit();" action="" method="get">
+                    {{ form|crispy }}
+                </form>
+            {% endif %}
+
+            {% if orders %}
+                <table>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Shipping info</th>
+
+                        {% if user.is_moderator %}
+                            <th>Amazon</th>
+                            <th>eBay</th>
+                            <th>Income</th>
+                            <th>Items</th>
+                        {% endif %}
+
+                        <th>Profit</th>
+                    </tr>
+
+                    {% for order in orders %}
+                        <tr>
+                            <td id="{{ order.id }}_re">
+                                {% if order.returned %}
+                                    <del title="This order was not completed for some reason">
+                                        {{ order.order_id }}
+                                    </del>
+                                {% else %}
+                                    {{ order.order_id }}
+
+                                    {% if order.all_set and user.is_moderator %}
+                                        <a class="tooltips" href="/orders/return/{{ order.id }}">
+                                            <span>Make return</span>
+                                            <button type="button">&dArr;</button>
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                            <td>{{ order.purchase_date }}</td>
+
+                            <td>
+                                {% if order.shipping_info %}
+                                    <div class="filter">
+                                        <details>
+                                            <summary>Details</summary>
+
+                                            <table>
+                                                <tr>
+                                                    <th>Field</th>
+                                                    <th>Value</th>
+                                                </tr>
+
+                                                {% for field in order.shipping_info|sort_json %}
+                                                    <tr>
+                                                        <td>{{ field|list_item:1 }}</td>
+                                                        <td>{{ field|list_item:0 }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </table>
+                                        </details>
+                                    </div>
+
+                                {% else %}
+                                    No info
+
+                                {% endif %}
+                            </td>
+
+                            {% if user.is_moderator %}
+                                <td>{{ order.amazon_price|floatformat:2 }}$</td>
+
+                                {% if not order.all_set %}
+                                    {% if order.multi %}
+                                        <td><a class="tooltips" href="/orders/profits/{{ order.id }}">
+                                            <span>Set profits</span>
+                                            <button type="button">set</button>
+                                        </a></td>
+                                    {% else %}
+                                        <td id="{{ order.id }}_b"><a class="tooltips" onclick="modal_price({{ order.id }}, {{ order.amazon_price }});">
+                                            <span>Set eBay price</span>
+                                            <button type="button">set</button>
+                                        </a></td>
+                                    {% endif %}
+
+                                    <td id="{{ order.id }}_in">0.00$</td>
+                                {% else %}
+                                    <td>{{ order.ebay_price|floatformat:2 }}$</td>
+                                    <td>{{ order.total_profit|floatformat:2 }}$</td>
+                                {% endif %}
+
+                                <td><table>
+                                    {% for item in order.items.all %}
+                                        <tr>
+                                            {% define "https://www.amazon.com/dp/"|addstr:item|addstr:"/" as am_link %}
+                                            <td>
+                                                <a href="{{ am_link }}" target="_blank">{{ item }}</a>
+                                                <a class="tooltips" href="/search/{{ item }}/" target="_blank">
+                                                    <span>Find this pair</span>
+                                                    <button type="button">?</button>
+                                                </a>
+                                            </td>
+
+                                            <td>{{ item.owner }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table></td>
+
+                                {% if profits|list_item:forloop.counter == None and order.multi %}
+                                    <td>Set eBay price</td>
+                                {% elif profits|list_item:forloop.counter == None and not order.multi %}
+                                    <td id="{{ order.id }}_p">Set eBay price</td>
+                                {% else %}
+                                    {% define forloop.counter as counter %}
+
+                                    <td><table>
+                                        {% for profit in profits|list_item:counter %}
+                                            <tr>
+                                                <td>{{ profit|list_item:1 }}: {{ profit|list_item:2|floatformat:2 }}$</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </table><td>
+                                {% endif %}
+
+                            {% else %}
+                                {% if profits|list_item:forloop.counter %}
+                                    <td>{{ profits|list_item:forloop.counter|floatformat:2 }}$</td>
+                                {% elif order.returned %}
+                                    <td>0.00$</td>
+                                {% else %}
+                                    <td>Profit for this order is not defined</td>
+                                {% endif %}
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+
+            {% else %}
+                <big>{{ empty }}</big>
+            {% endif %}
+        </div>
+    </div></div>
+
+    {% if orders and not search %}
+        <div class="paginator">
+            {% if orders.has_previous %}
+                <a href="/orders/page/{{ orders.previous_page_number }}/">&laquo;</a>
+            {% else %}
+                &laquo;
+            {% endif %}
+
+            {% for page in orders.paginator.page_range %}
+                {% if page < page_range %}
+                    {% if page == current_page %}
+                        {{ page }}
+                    {% else %}
+                        <a href="/orders/page/{{ forloop.counter }}/">{{ page }}</a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            {% if orders.has_next %}
+                <a href="/orders/page/{{ orders.next_page_number }}/">&raquo;</a>
+            {% else %}
+                &raquo;
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

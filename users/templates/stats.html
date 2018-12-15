@@ -1,0 +1,20 @@
+{% extends 'main.html' %}
+{% block content %}
+    <div class="row"><div class="column">
+        <table>
+            <tr>
+                <th>User</th>
+                <th>Profit</th>
+                <th>Pairs count</th>
+            </tr>
+
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.profit }}$</td>
+                    <td>{{ user.pairs_count }} / {{ pair_min }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div></div>
+{% endblock %}
