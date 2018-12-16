@@ -10,6 +10,7 @@ $RECYCLE.BIN/
 
 .idea
 __pycache__
+base.py
 migrations
 secret.json
 secret_prod.json

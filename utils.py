@@ -100,7 +100,7 @@ class ApiObject(object):
         self.__connection_error = None
         self.__api = None
         self.connector(secret, service)
-        self.checker = ApiCallsChecker(service)
+        self.checker = None
 
     @property
     def api(self):
@@ -192,6 +192,9 @@ class ApiObject(object):
                 break
 
     def check_calls(self, exception, func, *func_args, **func_kwargs):
+        if self.checker is None:
+            return True
+
         if not self.checker.status:
             if exception:
                 raise func(*func_args, **func_kwargs)

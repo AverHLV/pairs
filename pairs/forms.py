@@ -94,18 +94,22 @@ class PairForm(forms.ModelForm):
 
         # validation based on api response
 
+        """
         amazon_products_api.check_calls(True, forms.ValidationError,
                                         '''Amazon api calls number is over.
                                         Please, try to add pair after {0} o’clock.
                                         '''.format(amazon_products_api.checker.start_time), code='am3')
+        """
 
         try:
             response = amazon_products_api.api.get_matching_product_for_id(amazon_products_api.region, 'ASIN', [asin])
 
+            """
             amazon_products_api.check_calls(True, forms.ValidationError,
                                             '''Amazon api calls number is over.
                                             Please, try to add pair after {0} o’clock.
                                             '''.format(amazon_products_api.checker.start_time), code='am3')
+            """
 
             response_price = amazon_products_api.api.get_my_price_for_asin(amazon_products_api.region, [asin])
 
@@ -205,9 +209,11 @@ class PairForm(forms.ModelForm):
 
             # validation based on api response
 
+            """
             ebay_trading_api.check_calls(True, forms.ValidationError,
                                          '''eBay api calls number is over. Please, try to add pair tomorrow in {0}.
                                          '''.format(ebay_trading_api.checker.start_time), code='eb8')
+            """
 
             try:
                 response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
