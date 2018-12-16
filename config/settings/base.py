@@ -22,7 +22,10 @@ SECRET_KEY = secret_dict['secret_key']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Admins contacts
+ADMINS = [(admin['name'], admin['email']) for admin in secret_dict['admins']]
+
+# ALLOWED_HOSTS = secret_dict['hosts']
 
 # Application definition
 
@@ -110,6 +113,13 @@ EMAIL_USE_TLS = True
 
 # Celery settings
 broker_url = secret_dict['broker_url']
+
+# Security settings
+SECURE_CONTENT_TYPE_NOSNIFF = False
+SECURE_BROWSER_XSS_FILTER = False
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
