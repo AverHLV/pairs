@@ -1,5 +1,4 @@
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect, render_to_response
 from django.utils.encoding import force_bytes, force_text
@@ -9,9 +8,7 @@ from django.template.context_processors import csrf
 from django.core.mail import send_mail
 from django.core.exceptions import ObjectDoesNotExist
 from smtplib import SMTPException
-from config.constants import pair_minimum
 from utils import secret_dict, logger
-from decorators import moderator_required
 from .tokens import account_activation_token
 from .models import CustomUser
 from .forms import SignUpForm
@@ -88,12 +85,3 @@ def activate(request, uidb64, token):
         return render_to_response('message.html', {'user': request.user,
                                                    'message': '''The confirmation link was invalid, 
                                                    possibly because it already has been used.'''})
-
-
-@login_required
-@moderator_required
-def stats(request):
-    """ Users stats page """
-
-    return render_to_response('stats.html', {'user': request.user, 'users': CustomUser.objects.order_by('username'),
-                                             'pair_min': pair_minimum})

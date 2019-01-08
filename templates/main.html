@@ -27,7 +27,8 @@
                     <li><a href="/auth/logout/">Log out ({{ user.username }})</a></li>
 
                     {% if user.is_moderator %}
-                        <li><a href="/auth/stats/">Users stats</a></li>
+                        <li><a href="/stats/">Graphs</a></li>
+                        <li><a href="/stats/users/">Users stats</a></li>
                     {% endif %}
 
                     <li><a href="/add_pair/">Add pair</a></li>

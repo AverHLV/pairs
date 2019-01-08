@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'django_celery_beat',
     'pairs',
+    'stats',
     'users'
 ]
 
