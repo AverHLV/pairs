@@ -65,7 +65,7 @@ def graphs(request):
     plt.ylabel('Count')
     plt.title('Users orders', fontsize=20)
 
-    plt.tight_layout()
+    fig1.tight_layout()
 
     # orders stats plot in new figure
 
@@ -85,7 +85,7 @@ def graphs(request):
     tooltip2 = plugins.PointHTMLTooltip(line2[0], labels2)
     plugins.connect(fig2, tooltip1, tooltip2)
 
-    plt.tight_layout()
+    fig2.tight_layout()
 
     return render_to_response('graphs.html', {'figure1': fig_to_html(fig1), 'figure2': fig_to_html(fig2),
                                               'user': request.user})
