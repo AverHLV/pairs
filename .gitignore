@@ -10,7 +10,6 @@ $RECYCLE.BIN/
 
 .idea
 __pycache__
-base.py
 migrations
 secret.json
 secret_prod.json
@@ -19,3 +18,4 @@ start.bat
 run_broker.py
 run_server.py
 run_worker.py
+.gitignore
