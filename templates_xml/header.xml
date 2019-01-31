@@ -3,5 +3,5 @@
         <DocumentVersion>1.01</DocumentVersion>
         <MerchantIdentifier></MerchantIdentifier>
     </Header>
-    <MessageType>Inventory</MessageType>
+    <MessageType></MessageType>
 </AmazonEnvelope>

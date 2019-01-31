@@ -4,8 +4,9 @@ from math import inf
 # file paths
 base_dir = Path(__file__).ancestor(2)
 secret_filename = base_dir.child('config').child('secret.json')
-xml_body_filename = base_dir.child('templates_xml').child('body.xml')
-xml_message_filename = base_dir.child('templates_xml').child('message.xml')
+xml_header_filename = base_dir.child('templates_xml').child('header.xml')
+xml_message_quantity_filename = base_dir.child('templates_xml').child('message_quantity.xml')
+xml_message_product_filename = base_dir.child('templates_xml').child('message_product.xml')
 
 # pairs models
 asin_length = 10
@@ -55,6 +56,18 @@ con_tries = 5
 con_delay = 5  # seconds
 ebay_trading_api_calls_number = 5000
 amazon_product_api_calls_number = 18000
+amazon_region = 'US'
+
+amazon_feed_types = {
+    'quantity': '_POST_INVENTORY_AVAILABILITY_DATA',
+    'product': '_POST_PRODUCT_DATA_',
+    'price': '_POST_PRODUCT_PRICING_DATA_'
+}
+
+amazon_message_types = {
+    'quantity': 'Inventory',
+    'product': 'Product'
+}
 
 amazon_market_ids = {
     'Canada': {'id': 'A2EUQ1WTGCTBG2', 'code': 'CA'},

@@ -1,0 +1,14 @@
+<Message>
+    <MessageID></MessageID>
+    <OperationType>Update</OperationType>
+    <Product>
+        <SKU></SKU>
+        <StandardProductID>
+            <Type>ASIN</Type>
+            <Value></Value>
+        </StandardProductID>
+        <Condition>
+            <ConditionType>New</ConditionType>
+        </Condition>
+    </Product>
+</Message>
