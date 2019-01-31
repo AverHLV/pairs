@@ -36,8 +36,8 @@ def update_pairs_quantity():
     # update quantities in Amazon inventory
 
     try:
-        response = amazon_feeds_api.api.submit_feeds(feed=xml_helper.tree, feed_type=amazon_feeds_api.feed_type,
-                                                     marketplaceids=[amazon_feeds_api.region])
+        response = amazon_feeds_api.api.submit_feed(feed=xml_helper.tree, feed_type=amazon_feeds_api.feed_type,
+                                                    marketplaceids=[amazon_feeds_api.region])
 
     except amazon_feeds_api.connection_error as e:
         logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e.response))
