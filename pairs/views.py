@@ -16,6 +16,7 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
     """ Display all pairs for current user (or all pairs for moderator) in checked and created order """
 
     show_reasons = False
+    show_check = False
     progress = None
     empty_orders_message = None
     pairs = Pair.objects.none().order_by('checked', '-created')
@@ -43,6 +44,14 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
                 show_reasons = True
                 break
 
+        # show 'Check' column or not
+
+        if request.user.is_moderator:
+            for pair in pairs.object_list:
+                if not pair.checked:
+                    show_check = True
+                    break
+
         progress = int((request.user.pairs_count * 100) / constants.pair_minimum)
 
     return render_to_response('pairs.html', {'pairs': pairs,
@@ -51,6 +60,7 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
                                              'user': request.user,
                                              'reasons': constants.failure_reasons,
                                              'show_reasons': show_reasons,
+                                             'show_check': show_check,
                                              'progress': progress,
                                              'pair_min': constants.pair_minimum,
                                              'empty': empty_orders_message,

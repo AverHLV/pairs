@@ -20,7 +20,7 @@
             {% if pairs %}
                 <table id="pairs">
                     <tr>
-                        {% if user.is_moderator %}
+                        {% if user.is_moderator and show_check %}
                             <th>Check</th>
                         {% endif %}
 
@@ -41,7 +41,7 @@
 
                     {% for pair in pairs %}
                         <tr>
-                            {% if user.is_moderator %}
+                            {% if user.is_moderator and show_check %}
                                 {% if not pair.checked %}
                                     <td id="{{ pair.id }}_b">
                                         <a onclick="modal({{ reasons }}, {{ pair.id }});" class="tooltips">
