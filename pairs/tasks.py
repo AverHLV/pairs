@@ -56,13 +56,13 @@ def update_pairs_quantity():
                                                     marketplaceids=[amazon_feeds_api.region])
 
     except amazon_feeds_api.connection_error as e:
-        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e.response))
+        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e))
         xml_quantity_helper.reload_tree()
         return
 
-    if response.parsed['FeedProcessingStatus']['value'] != '_SUBMITTED_':
+    if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
         logger.critical('Feeds Api did not accept messages to update the items quantity. Status: {0}. Messages: {1}.'
-                        .format(response.parsed['FeedProcessingStatus']['value'], messages))
+                        .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
     xml_quantity_helper.reload_tree()
     logger.info('Pairs quantity update is complete.')
@@ -98,13 +98,13 @@ def upload_new_pairs():
                                                     marketplaceids=[amazon_feeds_api.region])
 
     except amazon_feeds_api.connection_error as e:
-        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e.response))
+        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e))
         xml_product_helper.reload_tree()
         return
 
-    if response.parsed['FeedProcessingStatus']['value'] != '_SUBMITTED_':
+    if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
         logger.critical('Feeds Api did not accept messages to upload products. Status: {0}. Messages: {1}.'
-                        .format(response.parsed['FeedProcessingStatus']['value'], messages))
+                        .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
     xml_product_helper.reload_tree()
     logger.info('Products upload is complete.')
@@ -134,7 +134,7 @@ def check_orders():
         response = amazon_orders_api.api.list_orders(created_after=date, marketplaceids=[amazon_orders_api.region])
 
     except amazon_orders_api.connection_error as e:
-        logger.critical('Amazon Orders api unhandled error: {0}.'.format(e.response))
+        logger.critical('Amazon Orders api unhandled error: {0}.'.format(e))
         return
 
     if not len(response.parsed['Orders']):
@@ -175,7 +175,7 @@ def check_orders():
                 response_order = amazon_orders_api.api.list_order_items(new_order.order_id)
 
             except amazon_orders_api.connection_error as e:
-                logger.warning('Amazon Orders api unhandled error: {0}.'.format(e.response))
+                logger.warning('Amazon Orders api unhandled error: {0}.'.format(e))
                 continue
 
             try:

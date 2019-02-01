@@ -59,7 +59,7 @@ amazon_product_api_calls_number = 18000
 amazon_region = 'US'
 
 amazon_feed_types = {
-    'quantity': '_POST_INVENTORY_AVAILABILITY_DATA',
+    'quantity': '_POST_INVENTORY_AVAILABILITY_DATA_',
     'product': '_POST_PRODUCT_DATA_',
     'price': '_POST_PRODUCT_PRICING_DATA_'
 }

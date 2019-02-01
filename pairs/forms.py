@@ -115,8 +115,7 @@ class PairForm(forms.ModelForm):
 
         except amazon_products_api.connection_error as e:
             logger.warning(e.response)
-            raise forms.ValidationError('Amazon api unhandled error: {0}.'
-                                        .format(e.response), code='am5')
+            raise forms.ValidationError('Amazon api unhandled error: {0}.'.format(e), code='am5')
 
         else:
             try:
@@ -126,8 +125,8 @@ class PairForm(forms.ModelForm):
                 else:
                     error = response.parsed['Error']['Code']['value']
                     logger.warning(error)
-                    raise forms.ValidationError('Amazon api unhandled error in response! Error: {0}.'
-                                                .format(error), code='am7')
+                    raise forms.ValidationError('Amazon api unhandled error in response! Error: {0}.'.format(error),
+                                                code='am7')
 
             except KeyError:
                 pass
