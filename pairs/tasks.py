@@ -270,7 +270,7 @@ def calc_app_price(input_ebay_prices):
         if not ebay_price:
             continue
 
-        for interval in constants.profit_intervals.keys():
+        for interval in constants.profit_intervals:
             if interval[0] <= ebay_price < interval[1]:
                 price = ebay_price * constants.profit_intervals[interval] / constants.profit_percentage
                 prices.append(price)

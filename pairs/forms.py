@@ -71,7 +71,7 @@ class PairForm(forms.ModelForm):
 
             price = 0
 
-            for interval in constants.profit_intervals.keys():
+            for interval in constants.profit_intervals:
                 if interval[0] <= ebay_price < interval[1]:
                     price = ebay_price * constants.profit_intervals[interval] / constants.profit_percentage
                     prices.append(price)
