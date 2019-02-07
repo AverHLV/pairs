@@ -6,3 +6,4 @@ start.bat
 run_broker.py
 run_server.py
 run_worker.py
+run_shell.py

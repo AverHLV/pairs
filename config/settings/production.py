@@ -112,9 +112,6 @@ EMAIL_HOST_USER = secret_dict['em_user']
 EMAIL_HOST_PASSWORD = secret_dict['em_pass']
 EMAIL_USE_TLS = True
 
-# Celery settings
-broker_url = secret_dict['broker_url']
-
 # Security settings
 SECURE_CONTENT_TYPE_NOSNIFF = False
 SECURE_BROWSER_XSS_FILTER = False
@@ -152,6 +149,11 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# Celery settings
+broker_url = secret_dict['broker_url']
+timezone = TIME_ZONE
+task_ignore_result = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

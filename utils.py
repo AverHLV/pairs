@@ -16,9 +16,10 @@ def get_secret(filename):
     """ Get the secret from json file or raise exception """
 
     fields = (
-        'secret_key', 'db_admin', 'db_pass', 'db_name', 'db_host', 'db_port', 'broker_url', 'em_user', 'em_pass',
-        'em_server', 'em_port', 'eb_app_id', 'eb_dev_id', 'eb_cert_id', 'eb_ru_name', 'eb_user_token',
-        'eb_token_exp_date', 'am_seller_id', 'am_access_key', 'am_secret_key', 'am_auth_token', 'hosts', 'admins'
+        'secret_key', 'db_admin', 'db_pass', 'db_name', 'db_host', 'db_port', 'broker_url', 'broker_api_url',
+        'flower_auth', 'em_user', 'em_pass', 'em_server', 'em_port', 'eb_app_id', 'eb_dev_id', 'eb_cert_id',
+        'eb_ru_name', 'eb_user_token', 'eb_token_exp_date', 'am_seller_id', 'am_access_key', 'am_secret_key',
+        'am_auth_token', 'hosts', 'admins'
     )
 
     try:
@@ -252,8 +253,17 @@ class XmlHelper(object):
         elif self.__message_type == 'product':
             message.find('.//Value').text = str(param)
 
-        self.__message_number += 1
+        elif self.__message_type == 'price':
+            try:
+                float(param)
+
+            except ValueError:
+                raise ValueError('Price value must be float or integer only')
+
+            message.find('.//StandardPrice').text = str(param)
+
         self.__root.insert(self.__message_number + 1, message)
+        self.__message_number += 1
 
     def make_body(self, messages):
         for message in messages:
@@ -277,3 +287,5 @@ xml_quantity_helper = XmlHelper((constants.xml_header_filename, constants.xml_me
                                 secret_dict['am_seller_id'], message_type='quantity')
 xml_product_helper = XmlHelper((constants.xml_header_filename, constants.xml_message_product_filename),
                                secret_dict['am_seller_id'], message_type='product')
+xml_price_helper = XmlHelper((constants.xml_header_filename, constants.xml_message_price_filename),
+                             secret_dict['am_seller_id'], message_type='price')

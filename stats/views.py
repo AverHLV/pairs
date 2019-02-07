@@ -47,7 +47,6 @@ def graphs(request):
 
     # users profits diagram
 
-    plt.subplot(121)
     plt.bar(usernumbers, profits, color='g')
 
     for i, v in enumerate(profits):
@@ -57,19 +56,22 @@ def graphs(request):
     plt.ylabel('$')
     plt.title('Users profits', fontsize=20)
 
+    fig1.tight_layout()
+
     # users orders number diagram
 
-    plt.subplot(122)
+    fig2 = plt.figure()
+
     plt.bar(usernumbers, ordernumbers, color='b')
     plt.xticks(usernumbers, usernames)
     plt.ylabel('Count')
     plt.title('Users orders', fontsize=20)
 
-    fig1.tight_layout()
+    fig2.tight_layout()
 
     # orders stats plot in new figure
 
-    fig2 = plt.figure()
+    fig3 = plt.figure()
 
     line1 = plt.plot(days, ordercounts, c='g', marker='o')
     line2 = plt.plot(days, orderprofits, c='b', marker='s')
@@ -85,7 +87,7 @@ def graphs(request):
     tooltip2 = plugins.PointHTMLTooltip(line2[0], labels2)
     plugins.connect(fig2, tooltip1, tooltip2)
 
-    fig2.tight_layout()
+    fig3.tight_layout()
 
     return render_to_response('graphs.html', {'figure1': fig_to_html(fig1), 'figure2': fig_to_html(fig2),
-                                              'user': request.user})
+                                              'figure3': fig_to_html(fig3), 'user': request.user})

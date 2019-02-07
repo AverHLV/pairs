@@ -43,12 +43,16 @@ function modal(reasons, id) {
                 value: "1"
             },
             {
-                text: "Mark as unchecked. " + reasons[2],
+                text: "Mark as unsuitable. " + reasons[2],
                 value: "2"
             },
             {
-                text: "Mark as unchecked. " + reasons[3],
+                text: "Mark as unsuitable. " + reasons[3],
                 value: "3"
+            },
+            {
+                text: "Mark as unsuitable. " + reasons[4],
+                value: "4"
             }],
 
         callback: function(result) {

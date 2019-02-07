@@ -192,6 +192,7 @@ def add_pair(request):
             if new_pair.sku is not None:
                 pair.seller_sku = new_pair.sku
 
+            pair.amazon_approximate_price = new_pair.amazon_approximate_price
             pair.check_quantity()
             pair.save()
             return redirect('/')
@@ -221,13 +222,14 @@ def change_pair(request, pair_id):
         if new_pair.is_valid():
             pair.asin = new_pair.cleaned_data['asin']
             pair.ebay_ids = new_pair.cleaned_data['ebay_ids']
+            pair.amazon_approximate_price = new_pair.amazon_approximate_price
 
             if pair.checked == 1:
                 pair.owner.pairs_count -= 1
                 pair.owner.save(update_fields=['pairs_count'])
 
             pair.checked = 0
-            pair.save(update_fields=['asin', 'ebay_ids', 'checked'])
+            pair.save(update_fields=['asin', 'ebay_ids', 'checked', 'amazon_approximate_price'])
             return redirect('/')
 
         else:

@@ -30,6 +30,7 @@ class Pair(TimeStamped):
     ebay_ids_length = (constants.ebay_ids_max_count * constants.ebay_id_length) + constants.ebay_ids_max_count - 1
     ebay_ids = models.CharField(max_length=ebay_ids_length)
     quantity = models.PositiveIntegerField(blank=True, null=True)
+    amazon_approximate_price = models.FloatField()
     objects = models.Manager()
 
     class Meta:
@@ -50,7 +51,12 @@ class Pair(TimeStamped):
             else:
                 try:
                     response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
-                    id_q = int(response.reply.Item.Quantity) - int(response.reply.Item.SellingStatus.QuantitySold)
+
+                    if response.reply.Item.SellingStatus.ListingStatus == 'Active':
+                        id_q = int(response.reply.Item.Quantity) - int(response.reply.Item.SellingStatus.QuantitySold)
+                    else:
+                        id_q = 0
+
                     quantity += id_q
 
                 except ebay_trading_api.connection_error as e:

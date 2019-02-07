@@ -7,6 +7,7 @@ secret_filename = base_dir.child('config').child('secret.json')
 xml_header_filename = base_dir.child('templates_xml').child('header.xml')
 xml_message_quantity_filename = base_dir.child('templates_xml').child('message_quantity.xml')
 xml_message_product_filename = base_dir.child('templates_xml').child('message_product.xml')
+xml_message_price_filename = base_dir.child('templates_xml').child('message_price.xml')
 
 # pairs models
 asin_length = 10
@@ -23,12 +24,15 @@ pair_minimum = 30
 
 failure_reasons = {
     2: 'Different items',
-    3: 'Different package contain'
+    3: 'Different package contain',
+    4: 'Cannot be added to the store'
 }
 
 # pairs forms
 amazon_max_salesrank = 500000
 ebay_max_delivery_time = 9  # days
+ebay_min_feedback_score = 500
+ebay_min_positive_percentage = 98.0
 profit_percentage = 0.85
 profit_buffer = 1
 min_order_owner_profit = 0.5
@@ -41,12 +45,38 @@ profit_intervals = {
     (50, inf): 1.15
 }
 
+amazon_approximate_price_percent = {
+    (0, 10): 0.15,
+    (10, 20): 0.12,
+    (20, 30): 0.1,
+    (30, inf): 0.07
+}
+
 # pairs tasks
 pair_days_live = 35
+pair_4_reason_days_live = 7
+amazon_workflow_delay = 180  # seconds
+
+# pairs parsers
+
+ebay_delivery_months = {
+    'Jan': 1,
+    'Feb': 2,
+    'Mar': 3,
+    'Apr': 4,
+    'May': 5,
+    'Jun': 6,
+    'Jul': 7,
+    'Aug': 8,
+    'Sep': 9,
+    'Oct': 10,
+    'Nov': 11,
+    'Dec': 12
+}
 
 # users models
 profit_percent = [
-    {'mine': 0.4, 1: 0.15, 2: 0.2},
+    {'mine': 0.3, 1: 0.1, 2: 0.2},
     {'mine': 0.7, 2: 0.3},
     {'mine': 1}
 ]
@@ -56,6 +86,9 @@ con_tries = 5
 con_delay = 5  # seconds
 ebay_trading_api_calls_number = 5000
 amazon_product_api_calls_number = 18000
+amazon_get_price_limit = 200  # requests per hour
+amazon_get_price_delay = 3600
+amazon_get_my_price_items_limit = 20  # max asins per request
 amazon_region = 'US'
 
 amazon_feed_types = {
@@ -66,7 +99,8 @@ amazon_feed_types = {
 
 amazon_message_types = {
     'quantity': 'Inventory',
-    'product': 'Product'
+    'product': 'Product',
+    'price': 'Price'
 }
 
 amazon_market_ids = {

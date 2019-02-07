@@ -10,3 +10,6 @@ mws==0.8.6
 matplotlib==3.0.2
 mpld3==0.3
 jinja2==2.10
+lxml==4.2.5
+kombu==4.2.1
+flower==0.9.2

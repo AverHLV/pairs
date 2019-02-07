@@ -1,7 +1,8 @@
 from django import forms
 from re import search
 from config import constants
-from utils import ebay_trading_api, ebay_shopping_api, amazon_products_api, logger
+from utils import ebay_trading_api, amazon_products_api, logger
+from .parsers import get_rank_from_response, get_price_from_response, get_delivery_time, get_ebay_price
 from .models import Pair
 
 
@@ -16,11 +17,12 @@ class PairForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.amazon_price = 0
+        self.amazon_approximate_price = 0
         self.ebay_price = []
         self.old_data = old_data
         self.old_asin_not_changed = False
         self.old_ebay_not_changed = False
-        self.variated_item = False
+        self.variated_item = False  # TODO: check behaviour with this items
         self.sku = None
 
         self.fields['asin'].label = 'ASIN'
@@ -48,34 +50,52 @@ class PairForm(forms.ModelForm):
                                 <li>One id length: {0}.</li>
                                 <li>Maximum ids count: {1}.</li>
                                 <li>Seller should accepts return for all items.</li>
+                                <li>Feedback score should be greater than {3}.</li>
+                                <li>Positive feedback percentage should be greater than {4}%.</li>
                                 <li>High end of delivery time for all items should be lower or equal than {2} days.</li>
                             </ul>
                             
                             For example: 123456789123;987654321987
                             '''.format(constants.ebay_id_length, constants.ebay_ids_max_count,
-                                       constants.ebay_max_delivery_time)
+                                       constants.ebay_max_delivery_time, constants.ebay_min_feedback_score,
+                                       constants.ebay_min_positive_percentage)
 
     def check_profit(self):
-        """ Check minimum profit for asin and all eBay ids """
+        """ Check minimum profit for asin and all eBay ids and calculate approximate price for Amazon """
 
-        if self.amazon_price:
-            for ebay_price in self.ebay_price:
-                if not ebay_price:
-                    continue
+        prices, ebay_prices = [], []
 
-                price = 0
+        for ebay_price in self.ebay_price:
+            if not ebay_price:
+                continue
 
-                for interval in constants.profit_intervals.keys():
-                    if interval[0] <= ebay_price < interval[1]:
-                        price = ebay_price * constants.profit_intervals[interval] / constants.profit_percentage
-                        break
+            price = 0
 
+            for interval in constants.profit_intervals.keys():
+                if interval[0] <= ebay_price < interval[1]:
+                    price = ebay_price * constants.profit_intervals[interval] / constants.profit_percentage
+                    prices.append(price)
+                    ebay_prices.append(ebay_price)
+                    break
+
+            if self.amazon_price:
                 if price + constants.profit_buffer >= self.amazon_price:
                     return False
 
-            return True
+        # getting approximate price
 
-    def clean_asin(self):
+        max_ebay_price_coeff = 0
+        max_price = max(prices)
+        max_ebay_price = ebay_prices[prices.index(max_price)]
+
+        for interval in constants.amazon_approximate_price_percent:
+            if interval[0] <= max_ebay_price < interval[1]:
+                max_ebay_price_coeff = constants.amazon_approximate_price_percent[interval]
+
+        self.amazon_approximate_price = round(max_price + max_ebay_price * max_ebay_price_coeff, 2)
+        return True
+
+    def clean_input_asin(self):
         asin = self.cleaned_data['asin']
 
         if self.old_data is not None:
@@ -84,13 +104,15 @@ class PairForm(forms.ModelForm):
                 return asin
 
         if len(asin) != constants.asin_length:
-            raise forms.ValidationError('ASIN should be {0} length.'.format(constants.asin_length), code='am1')
+            raise forms.ValidationError({'asin': 'ASIN should be {0} length.'.format(constants.asin_length)},
+                                        code='am1')
 
         if search('[^A-Z0-9]', asin):
-            raise forms.ValidationError('ASIN should contains only numbers and uppercase letters.', code='am2')
+            raise forms.ValidationError({'asin': 'ASIN should contains only numbers and uppercase letters.'},
+                                        code='am2')
 
         if Pair.objects.filter(asin__exact=asin).exists():
-            raise forms.ValidationError('This ASIN already exists.'.format(constants.asin_length), code='am4')
+            raise forms.ValidationError({'asin': 'This ASIN already exists.'.format(constants.asin_length)}, code='am4')
 
         # validation based on api response
 
@@ -111,47 +133,56 @@ class PairForm(forms.ModelForm):
                                             '''.format(amazon_products_api.checker.start_time), code='am3')
             """
 
-            response_price = amazon_products_api.api.get_my_price_for_asin(amazon_products_api.region, [asin])
+            response_my_product = amazon_products_api.api.get_my_price_for_asin(amazon_products_api.region, [asin])
+            response_price = amazon_products_api.api.get_lowest_priced_offers_for_asin(amazon_products_api.region, asin)
 
         except amazon_products_api.connection_error as e:
             logger.warning(e.response)
-            raise forms.ValidationError('Amazon api unhandled error: {0}.'.format(e), code='am5')
+            raise forms.ValidationError({'asin': 'Amazon api unhandled error: {0}.'.format(e)}, code='am5')
 
         else:
             try:
                 if response.parsed['Error']['Code']['value'] == 'InvalidParameterValue':
-                    raise forms.ValidationError('Invalid ASIN.', code='am6')
+                    raise forms.ValidationError({'asin': 'Invalid ASIN.'}, code='am6')
 
                 else:
                     error = response.parsed['Error']['Code']['value']
                     logger.warning(error)
-                    raise forms.ValidationError('Amazon api unhandled error in response! Error: {0}.'.format(error),
-                                                code='am7')
+                    raise forms.ValidationError({'asin': 'Amazon api unhandled error in response! Error: {0}.'
+                                                .format(error)}, code='am7')
 
             except KeyError:
                 pass
 
-            rank = int(response.parsed['Products']['Product']['SalesRankings']['SalesRank'][0]['Rank']['value'])
+            # checking for Amazon sales rank
+
+            rank = get_rank_from_response(response)
+
+            if not rank:
+                raise forms.ValidationError({'asin': 'Sales rank is unavailable. Please try later'}, code='am9')
 
             if rank > constants.amazon_max_salesrank:
-                raise forms.ValidationError('Item sales rank is greater than {0}.'
-                                            .format(constants.amazon_max_salesrank), code='am8')
+                raise forms.ValidationError({'asin': 'Item sales rank is greater than {0}.'
+                                            .format(constants.amazon_max_salesrank)}, code='am8')
 
-            # checking for item variations to get price and sku
+            # checking for item variations, product existing in inventory and price
 
             try:
-                self.amazon_price = float(response_price.parsed['Product']['Offers']['Offer']['BuyingPrice']
-                                          ['ListingPrice']['Amount']['value'])
+                self.amazon_price = float(response_my_product.parsed['Product']['Offers']['Offer']['BuyingPrice']
+                                          ['LandedPrice']['Amount']['value'])
 
-            except KeyError:
-                self.variated_item = True
+            except (KeyError, ValueError):
+                self.amazon_price = get_price_from_response(response_price)
+
+                if not self.amazon_price:
+                    self.variated_item = True
 
             else:
-                self.sku = response_price.parsed['Product']['Offers']['Offer']['SellerSKU']['value']
+                self.sku = response_my_product.parsed['Product']['Offers']['Offer']['SellerSKU']['value']
 
         return asin
 
-    def clean_ebay_ids(self):
+    def clean_input_ebay_ids(self):
         old_ebay_ids_to_add = []
         ebay_ids = self.cleaned_data['ebay_ids']
 
@@ -180,31 +211,32 @@ class PairForm(forms.ModelForm):
         # validation begins
 
         if search('[^0-9;]', ebay_ids):
-            raise forms.ValidationError('eBay ids should contain only numbers and delimiter.', code='eb1')
+            raise forms.ValidationError({'ebay_ids': 'eBay ids should contain only numbers and delimiter.'},
+                                        code='eb1')
 
         if ';' == ebay_ids[-1]:
-            raise forms.ValidationError('Don’t put delimiter after last id.', code='eb2')
+            raise forms.ValidationError({'ebay_ids': 'Don’t put delimiter after last id.'}, code='eb2')
 
         if len(ebay_ids) > constants.ebay_id_length and search(';', ebay_ids) is None:
-            raise forms.ValidationError("eBay ids delimiter should be ';'.", code='eb3')
+            raise forms.ValidationError({'ebay_ids': "eBay ids delimiter should be ';'."}, code='eb3')
 
         ebay_ids_split = ebay_ids.split(';')
 
         if len(ebay_ids_split) > len(set(ebay_ids_split)):
-            raise forms.ValidationError('Your input string contains duplicate ids.', code='eb4')
+            raise forms.ValidationError({'ebay_ids': 'Your input string contains duplicate ids.'}, code='eb4')
 
         if len(ebay_ids_split) > constants.ebay_ids_max_count:
-            raise forms.ValidationError('''Your input string contains 
-                                        more than {0} ids.'''.format(constants.ebay_ids_max_count), code='eb5')
+            raise forms.ValidationError({'ebay_ids': '''Your input string contains 
+                                        more than {0} ids.'''.format(constants.ebay_ids_max_count)}, code='eb5')
 
         for ebay_id in ebay_ids_split:
             if len(ebay_id) != constants.ebay_id_length:
-                raise forms.ValidationError('''One of your ids has wrong length. 
-                                            eBay id length should be {0}.'''.format(constants.ebay_id_length),
+                raise forms.ValidationError({'ebay_ids': '''One of your ids has wrong length. 
+                                            eBay id length should be {0}.'''.format(constants.ebay_id_length)},
                                             code='eb6')
 
             if Pair.objects.filter(ebay_ids__contains=ebay_id).exists():
-                    raise forms.ValidationError('This id ({0}) already exists.'.format(ebay_id), code='eb7')
+                raise forms.ValidationError({'ebay_ids': 'This id ({0}) already exists.'.format(ebay_id)}, code='eb7')
 
             # validation based on api response
 
@@ -216,58 +248,68 @@ class PairForm(forms.ModelForm):
 
             try:
                 response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
-                response_status = ebay_shopping_api.api.execute('GetItemStatus', {'ItemID': ebay_id})
 
             except ebay_trading_api.connection_error as e:
                 if e.response.dict()['Errors']['ErrorCode'] == '17':
-                    raise forms.ValidationError('This id ({0}) is invalid.'.format(ebay_id), code='eb9')
+                    raise forms.ValidationError({'ebay_ids': 'This id ({0}) is invalid.'.format(ebay_id)}, code='eb9')
 
                 else:
                     logger.warning(e.response.dict()['Errors'])
-                    raise forms.ValidationError('eBay api unhandled error: {0}.'.format(e.response.dict()['Errors']),
-                                                code='eb10')
+                    raise forms.ValidationError({'ebay_ids': 'eBay api unhandled error: {0}.'
+                                                .format(e.response.dict()['Errors'])}, code='eb10')
 
             else:
                 # listing status checking
 
-                if response_status.reply.Item.ListingStatus != 'Active':
-                    raise forms.ValidationError("Listing status for this item ({0}) is not 'Active'.".format(ebay_id),
-                                                code='eb11')
-
-                # if item has service option list (multiple prices and other info)
-
-                if type(response.reply.Item.ShippingDetails.ShippingServiceOptions) is list:
-                    self.variated_item = True
-                    continue
+                if response.reply.Item.SellingStatus.ListingStatus != 'Active':
+                    raise forms.ValidationError({'ebay_ids': "Listing status for this item ({0}) is not 'Active'."
+                                                .format(ebay_id)}, code='eb11')
 
                 if response.reply.Item.ReturnPolicy.ReturnsAcceptedOption == 'ReturnsNotAccepted':
-                    raise forms.ValidationError('Seller does not accept return for this item ({0}).'
-                                                .format(ebay_id), code='eb12')
+                    raise forms.ValidationError({'ebay_ids': 'Seller does not accept return for this item ({0}).'
+                                                .format(ebay_id)}, code='eb12')
 
-                shipping_time = int(response.reply.Item.ShippingDetails.ShippingServiceOptions.ShippingTimeMax)
-                dispatch_time = int(response.reply.Item.DispatchTimeMax)
+                # checking seller statistics
 
-                if shipping_time + dispatch_time > constants.ebay_max_delivery_time:
-                    raise forms.ValidationError('Delivery time for this item ({0}) is greater than {1} days.'
-                                                .format(ebay_id, constants.ebay_max_delivery_time), code='eb13')
+                feedback_score = int(response.reply.Item.Seller.FeedbackScore)
 
-                # checking for item variations to get price
+                if feedback_score <= constants.ebay_min_feedback_score:
+                    raise forms.ValidationError({'ebay_ids': '''Feedback score for this item ({0})
+                                                             lower or equal than {1}.'''
+                                                .format(ebay_id, constants.ebay_min_feedback_score)}, code='eb16')
 
-                price = 0
+                positive_feedback = float(response.reply.Item.Seller.PositiveFeedbackPercent)
 
-                try:
-                    response.reply.Item.Variations
+                if positive_feedback <= constants.ebay_min_positive_percentage:
+                    raise forms.ValidationError({'ebay_ids': '''Positive feedback percentage for this item ({0})
+                                                             lower or equal than {1}%.'''
+                                                .format(ebay_id, constants.ebay_min_positive_percentage)}, code='eb15')
 
-                except AttributeError:
-                    price = float(response.reply.Item.BuyItNowPrice.value)
+                # item delivery time
 
-                    if not price:
-                        price = float(response.reply.Item.StartPrice.value)
+                delivery_time = get_delivery_time(ebay_id)
 
-                else:
-                    self.variated_item = True
+                if delivery_time is None:
+                    raise forms.ValidationError({'ebay_ids': '''Getting delivery time failed. Please try later.
+                                                             Maybe this item does not ship to server region.'''},
+                                                code='eb14')
 
-                self.ebay_price.append(price)
+                if delivery_time > constants.ebay_max_delivery_time:
+                    raise forms.ValidationError({'ebay_ids': '''Delivery time for this item ({0})
+                                                is greater than {1} days.'''
+                                                .format(ebay_id, constants.ebay_max_delivery_time)}, code='eb13')
+
+                # getting eBay price
+
+                self.ebay_price.append(get_ebay_price(response))
+
+        # checking all eBay prices
+
+        ebay_price_set = set(self.ebay_price)
+
+        if len(ebay_price_set) == 1 and not list(ebay_price_set)[0]:
+            raise forms.ValidationError({'ebay_ids': '''Checking eBay prices failed. All ids in request have
+                                                     a zero price.'''}, code='eb17')
 
         if len(old_ebay_ids_to_add):
             ebay_ids += ';' + ';'.join(old_ebay_ids_to_add)
@@ -276,6 +318,8 @@ class PairForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        cleaned_data['asin'] = self.clean_input_asin()
+        cleaned_data['ebay_ids'] = self.clean_input_ebay_ids()
 
         # multiple validation
         # in update case
@@ -283,7 +327,9 @@ class PairForm(forms.ModelForm):
         if self.old_asin_not_changed and self.old_ebay_not_changed:
             raise forms.ValidationError('You have not changed anything.', code='fe1')
 
-        if not self.variated_item and not self.errors and not self.check_profit():
+        profit_check = self.check_profit()
+
+        if not self.errors and not profit_check:
             raise forms.ValidationError('Specified items do not bring the minimum desired benefit.', code='fe2')
 
         return cleaned_data
@@ -301,6 +347,7 @@ class SearchForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        cleaned_data['ebay_ids'] = self.c
 
         # validation based on search_type (ASIN or Order ID)
 

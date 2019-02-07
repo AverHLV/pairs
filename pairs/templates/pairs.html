@@ -11,7 +11,8 @@
                 {% define "#4ec052" as pro_color %}
             {% endif %}
 
-            <div class="progress" data-label="{{ user.pairs_count }} / {{ pair_min }}">
+            <div class="progress" title="Try to add the specified number of pairs in this month"
+                 data-label="{{ user.pairs_count }} / {{ pair_min }}">
                 <span class="value" style="width: {{ progress }}%; background-color: {{ pro_color }}"></span>
             </div>
         {% endif %}
@@ -76,7 +77,7 @@
                                 {% define "This item is checked" as title %}
                             {% else %}
                                 {% define "#A60000" as status %}
-                                {% define "This item has been checked as unsuitable, see 'Reasons' column" as title %}
+                                {% define "This item has been checked as unsuitable, see 'Reason' column" as title %}
                             {% endif %}
 
                             <td id="{{ pair.id }}" bgcolor="{{ status }}" title="{{ title }}"></td>
