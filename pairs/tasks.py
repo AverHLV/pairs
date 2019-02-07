@@ -279,6 +279,10 @@ def calc_app_price(input_ebay_prices):
 
     # getting approximate price
 
+    if not len(prices):
+        print(input_ebay_prices)
+        return 0
+
     max_ebay_price_coeff = 0
     max_price = max(prices)
     max_ebay_price = ebay_prices[prices.index(max_price)]
@@ -310,7 +314,12 @@ def empty_app_prices():
             print(pair_info[0])
 
         else:
-            asins_prices.append((pair_info[0], calc_app_price(ebay_price)))
+            app_price = calc_app_price(ebay_price)
+
+            if not app_price:
+                print(pair_info[0])
+
+            asins_prices.append((pair_info[0], app_price))
 
     set_prices_local(asins_prices)
     print('Done')
