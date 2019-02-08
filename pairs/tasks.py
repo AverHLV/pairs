@@ -168,7 +168,12 @@ def update_pairs_quantity():
         pair.save(update_fields=['quantity'])
 
         if len(pair.seller_sku) and pair.quantity is not None:
-            messages.append((pair.seller_sku, pair.quantity))
+            quantity = pair.quantity
+
+            if quantity > 10:
+                quantity = 10
+
+            messages.append((pair.seller_sku, quantity))
 
     if len(messages):
         xml_quantity_helper.make_body(messages)
