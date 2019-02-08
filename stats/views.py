@@ -42,7 +42,9 @@ def graphs(request):
         ordercounts.append(len(found_orders))
         orderprofits.append(sum([order.total_profit for order in found_orders]))
 
-    rc('font', size=16)
+    plt.style.use('ggplot')
+    rc('font', size=14)
+    rc('xtick', labelsize=10)
     fig1 = plt.figure()
 
     # users profits diagram
@@ -85,7 +87,7 @@ def graphs(request):
     labels2 = ['profit: {0}'.format(x) for x in orderprofits]
     tooltip1 = plugins.PointHTMLTooltip(line1[0], labels1)
     tooltip2 = plugins.PointHTMLTooltip(line2[0], labels2)
-    plugins.connect(fig2, tooltip1, tooltip2)
+    plugins.connect(fig3, tooltip1, tooltip2)
 
     fig3.tight_layout()
 

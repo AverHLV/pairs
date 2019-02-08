@@ -163,7 +163,7 @@ def update_pairs_quantity():
 
     # update quantities in db from eBay
 
-    for pair in Pair.objects.all():
+    for pair in Pair.objects.all().exclude(checked=4):
         pair.check_quantity()
 
         if len(pair.seller_sku) and pair.quantity is not None:
@@ -464,12 +464,8 @@ def delete_pairs():
     """ Delete old pairs that do not appear in any order """
 
     for pair in Pair.objects.filter(created__lte=datetime.now(get_current_timezone()) - timedelta(
-            days=constants.pair_days_live)).filter(checked__in=(1, 2, 3)):
+            days=constants.pair_days_live)).exclude(checked=4):
         if not Order.objects.filter(items=pair).exists():
-            if pair.checked == 1:
-                pair.owner.pairs_count -= 1
-                pair.owner.save(update_fields=['pairs_count'])
-
             pair.delete()
 
     logger.info('Old pairs deleted')

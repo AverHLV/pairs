@@ -56,7 +56,13 @@
                             {% endif %}
 
                             {% define "https://www.amazon.com/dp/"|addstr:pair.asin|addstr:"/" as am_link %}
-                            <td><a href="{{ am_link }}" target="_blank">{{ pair.asin }}</a></td>
+
+                            {% if pair.seller_sku %}
+                                <td><a href="{{ am_link }}" target="_blank">{{ pair.asin }} <sup>in store</sup></a></td>
+                            {% else %}
+                                <td><a href="{{ am_link }}" target="_blank">{{ pair.asin }}</a></td>
+                            {% endif %}
+
                             <td>
                                 {% for eid in pair.ebay_ids|splitstr %}
                                     {% define "https://www.ebay.com/itm/"|addstr:eid|addstr:"/" as eb_link %}
