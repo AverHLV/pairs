@@ -31,6 +31,7 @@ class Pair(TimeStamped):
     ebay_ids = models.CharField(max_length=ebay_ids_length)
     quantity = models.PositiveIntegerField(blank=True, null=True)
     amazon_approximate_price = models.FloatField()
+    reason_message = models.CharField(max_length=constants.reason_message_max_length, blank=True)
     objects = models.Manager()
 
     class Meta:

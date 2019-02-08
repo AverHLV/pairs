@@ -347,7 +347,6 @@ class SearchForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        cleaned_data['ebay_ids'] = self.c
 
         # validation based on search_type (ASIN or Order ID)
 

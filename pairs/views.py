@@ -127,7 +127,7 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
 @is_ajax
 @login_required
 @moderator_required
-def mark_as_checked(_, pair_id, result, __=None):
+def mark_as_checked(_, pair_id, result, reason):
     """ Mark requested pair as checked by ajax """
 
     pair = get_object_or_404(Pair, id=pair_id)
@@ -136,13 +136,23 @@ def mark_as_checked(_, pair_id, result, __=None):
         return JsonResponse({'status': 'Already checked'})
 
     pair.checked = int(result)
-    pair.save(update_fields=['checked'])
+
+    if len(reason) and pair.checked == 5:
+        if len(reason) > constants.reason_message_max_length:
+            reason = reason[:constants.reason_message_max_length]
+
+        pair.reason_message = reason
+        pair.save(update_fields=['checked', 'reason_message'])
+
+    else:
+        pair.save(update_fields=['checked'])
 
     if pair.checked == 1:
         pair.owner.pairs_count += 1
         pair.owner.save(update_fields=['pairs_count'])
 
-    return JsonResponse({'status': 'Checked', 'code': pair.checked, 'reasons': constants.failure_reasons})
+    return JsonResponse({'status': 'Checked', 'code': pair.checked, 'reason': pair.reason_message,
+                         'reasons': constants.failure_reasons})
 
 
 @is_ajax

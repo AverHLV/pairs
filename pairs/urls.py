@@ -4,8 +4,8 @@ from . import views
 urlpatterns = [
     path('', views.pairs_paginator),
     path('page/<int:page_number>/', views.pairs_paginator),
-    path('checked/<int:pair_id>/<int:result>/', views.mark_as_checked),
-    path('page/<int:__>/checked/<int:pair_id>/<int:result>/', views.mark_as_checked),
+    path('checked/<int:pair_id>/<int:result>/<str:reason>/', views.mark_as_checked),
+    path('page/<int:__>/checked/<int:pair_id>/<int:result>/<str:reason>/', views.mark_as_checked),
     path('profits/', views.profits_table),
     path('add_pair/', views.add_pair),
     path('change_pair/<int:pair_id>/', views.change_pair),

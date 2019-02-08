@@ -1,7 +1,7 @@
-function mark(result, id) {
+function mark(result, id, reason) {
     // send the result of the modal form to the server, then update chosen page elements
 
-    $.getJSON("checked/" + id + "/" + result + "/", function(data) {
+    $.getJSON("checked/" + id + "/" + result + "/" + reason + "/", function(data) {
         if (data['status'] == "Checked") {
             if (data['code'] == 1) {
                 $("#" + id).css('background-color', '#00B64F');
@@ -9,7 +9,14 @@ function mark(result, id) {
 
             else {
                 $("#" + id).css('background-color', '#A60000');
-                $("#" + id + "_r").html(data['reasons'][data['code']]);
+
+                if (data['code'] == 5) {
+                    $("#" + id + "_r").html(data['reason']);
+                }
+
+                else {
+                    $("#" + id + "_r").html(data['reasons'][data['code']]);
+                }
             }
 
             $("#" + id + "_b").html("");
@@ -53,11 +60,35 @@ function modal(reasons, id) {
             {
                 text: "Mark as unsuitable. " + reasons[4],
                 value: "4"
+            },
+            {
+                text: "Mark as unsuitable with own reason.",
+                value: "5"
             }],
 
         callback: function(result) {
             if (result !== null) {
-                mark(result, id);
+                if (result == "5") {
+                    bootbox.prompt("Set your own reason",
+
+                    function (reason) {
+                        if (reason === null) {
+                            return;
+                        }
+
+                        if (reason.length < 10) {
+                            alert("Enter at least 10 characters");
+                            return;
+                        }
+
+                        mark(result, id, reason);
+                    });
+
+                    return;
+                }
+
+                reason = ''
+                mark(result, id, reason);
             }
         }
     });

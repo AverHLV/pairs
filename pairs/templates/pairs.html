@@ -90,7 +90,11 @@
 
                             {% if show_reasons %}
                                 {% if pair.checked > 1 %}
-                                    {% define reasons|get_item:pair.checked as reason %}
+                                    {% if pair.checked == 5 %}
+                                        {% define pair.reason_message as reason %}
+                                    {% else %}
+                                        {% define reasons|get_item:pair.checked as reason %}
+                                    {% endif %}
                                 {% else %}
                                     {% define '' as reason %}
                                 {% endif %}

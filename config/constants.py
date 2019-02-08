@@ -14,6 +14,7 @@ asin_length = 10
 sku_length = 12
 ebay_id_length = 12
 ebay_ids_max_count = 4
+reason_message_max_length = 100
 owner_on_delete_id = 1
 order_id_length = 19
 
