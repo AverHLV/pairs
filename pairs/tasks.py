@@ -184,11 +184,14 @@ def update_pairs_quantity():
 
     except amazon_feeds_api.connection_error as e:
         xml_quantity_helper.reload_tree()
+        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e))
         raise ValueError('Unhandled Amazon Feeds api error: {0}.'.format(e))
 
     if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
         xml_quantity_helper.reload_tree()
-        raise ValueError('Feeds Api did not accept messages to update quantities Status: {0}. Messages: {1}.'
+        logger.critical('Feeds Api did not accept messages to update quantities. Status: {0}. Messages: {1}.'
+                        .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
+        raise ValueError('Feeds Api did not accept messages to update quantities. Status: {0}. Messages: {1}.'
                          .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
     xml_quantity_helper.reload_tree()
@@ -241,10 +244,13 @@ def set_prices(asins_prices):
 
     except amazon_feeds_api.connection_error as e:
         xml_price_helper.reload_tree()
+        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e))
         raise ValueError('Unhandled Amazon Feeds api error: {0}.'.format(e))
 
     if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
         xml_price_helper.reload_tree()
+        logger.critical('Feeds Api did not accept messages to set prices. Status: {0}. Messages: {1}.'
+                        .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
         raise ValueError('Feeds Api did not accept messages to set prices. Status: {0}. Messages: {1}.'
                          .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
