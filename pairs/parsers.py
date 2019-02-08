@@ -128,6 +128,13 @@ def get_delivery_time(ebay_id):
     Warning! Server region must be the same as eBay trading region
     """
 
+    possible_locations = [
+        '//strong[@class="vi-acc-del-range"]/b/text()',
+        '//span[@class="vi-acc-del-range"]/b/text()',
+        '//strong[@class="vi-acc-del-range"]/text()',
+        '//span[@class="vi-acc-del-range"]/text()'
+    ]
+
     try:
         response = urlopen('https://www.ebay.com/itm/{0}'.format(ebay_id)).read().decode('utf8')
 
@@ -138,12 +145,14 @@ def get_delivery_time(ebay_id):
     # find and parse date string in html response
 
     tree = fromstring(response, HTMLParser())
-    date = tree.xpath('//strong[@class="vi-acc-del-range"]/b/text()')
 
-    if not len(date):
-        date = tree.xpath('//span[@class="vi-acc-del-range"]/b/text()')
+    for location in possible_locations:
+        date = tree.xpath(location)
 
-    if not len(date):
+        if len(date):
+            break
+
+    else:
         return
 
     date = search(r'[A-Z][a-z]{2}\. \d{1,2}', date[0])
