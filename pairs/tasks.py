@@ -31,12 +31,14 @@ def gen_sku(length=10):
             return sku
 
 
-def check_products(check_type, asins=None, max_asins=constants.amazon_get_my_price_items_limit):
+def check_products(check_type, asins=None, max_asins=constants.amazon_get_my_price_items_limit,
+                   after_delay=constants.check_after_delay):
     """
     Check for seller sku in Amazon inventory
 
     :param asins: list with ASINs for check in check_after case
     :param max_asins: max items per request for GetMyPriceForASIN request
+    :param after_delay: delay for Amazon to process old requests
     :param check_type:
         check_before - for checking products existence before uploading
         check_after - check uploading results
@@ -56,6 +58,9 @@ def check_products(check_type, asins=None, max_asins=constants.amazon_get_my_pri
     if not len(asins):
         logger.info('No pairs to check, check_type: {0}'.format(check_type))
         return
+
+    if check_type == 'check_after':
+        sleep(after_delay)
 
     for part in asins:
         try:
