@@ -87,7 +87,7 @@ function modal(reasons, id) {
                     return;
                 }
 
-                reason = ''
+                reason = 'none';
                 mark(result, id, reason);
             }
         }
