@@ -16,6 +16,6 @@
             {% endfor %}
         </table>
         <br>
-        <p><big>(eBay price * coefficient / {{ profit_percentage }}) + {{ buffer }}$ must be lower than Amazon price.</big></p>
+        <p><big>((eBay price + eBay shipping cost) * coefficient / {{ profit_percentage }}) + {{ buffer }}$ must be lower than Amazon price.</big></p>
     </div></div>
 {% endblock %}

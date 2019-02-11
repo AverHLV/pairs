@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from time import sleep
 from uuid import uuid4
 from config import constants
-from .parsers import get_price_from_response, get_ebay_price
+from .parsers import get_price_from_response, get_ebay_price_from_response
 from .models import Pair, Order, shipping_info_fields
 from utils import (
     ebay_trading_api,                                          # eBay apis
@@ -323,7 +323,7 @@ def empty_app_prices():
 
         for ebay_id in pair_info[1]:
             response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
-            ebay_price.append(get_ebay_price(response))
+            ebay_price.append(get_ebay_price_from_response(response))
 
         ebay_price_set = set(ebay_price)
 

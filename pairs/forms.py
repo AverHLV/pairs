@@ -2,7 +2,7 @@ from django import forms
 from re import search
 from config import constants
 from utils import ebay_trading_api, amazon_products_api, logger
-from .parsers import get_rank_from_response, get_price_from_response, get_delivery_time, get_ebay_price
+from .parsers import get_rank_from_response, get_price_from_response, get_delivery_time, get_ebay_price_from_response
 from .models import Pair
 
 
@@ -286,7 +286,6 @@ class PairForm(forms.ModelForm):
                                                 .format(ebay_id, constants.ebay_min_positive_percentage)}, code='eb15')
 
                 # item delivery time
-
                 delivery_time = get_delivery_time(ebay_id)
 
                 if delivery_time is None:
@@ -301,7 +300,7 @@ class PairForm(forms.ModelForm):
 
                 # getting eBay price
 
-                self.ebay_price.append(get_ebay_price(response))
+                self.ebay_price.append(get_ebay_price_from_response(response))
 
         # checking all eBay prices
 

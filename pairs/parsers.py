@@ -106,8 +106,8 @@ def get_price_from_response(response):
             return min(prices)
 
 
-def get_ebay_price(response):
-    """ Get eBay item price from GetItem response """
+def get_ebay_price_from_response(response):
+    """ Get eBay item price and shipping cost from GetItem response """
 
     try:
         price = float(response.reply.Item.BuyItNowPrice.value)
@@ -115,10 +115,22 @@ def get_ebay_price(response):
         if not price:
             price = float(response.reply.Item.StartPrice.value)
 
-        return price
-
     except AttributeError:
         return 0
+
+    lowest_shipping_cost = 0
+
+    try:
+        for shipping_cost_info in response.reply.Item.ShippingDetails.ShippingServiceOptions:
+            shipping_cost = float(shipping_cost_info.ShippingServiceCost.value)
+
+            if shipping_cost < lowest_shipping_cost:
+                lowest_shipping_cost = shipping_cost
+
+    except AttributeError:
+        return price
+
+    return price + lowest_shipping_cost
 
 
 def get_delivery_time(ebay_id):
