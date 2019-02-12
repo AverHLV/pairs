@@ -1,0 +1,12 @@
+{% extends 'main.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="row"><div class="column">
+        <form onsubmit="set_loader();" action="{{ action }}" method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <p><a href="/auth/password_reset/">Forgot your password? (in development, not ready)</a></p>
+            <button type="submit">{{ button_text }}</button>
+        </form>
+    </div></div>
+{% endblock %}
