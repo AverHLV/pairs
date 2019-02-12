@@ -121,14 +121,26 @@ def get_ebay_price_from_response(response):
     lowest_shipping_cost = 0
 
     try:
-        for shipping_cost_info in response.reply.Item.ShippingDetails.ShippingServiceOptions:
-            shipping_cost = float(shipping_cost_info.ShippingServiceCost.value)
+        response.reply.Item.ShippingDetails.ShippingServiceOptions[0]
 
-            if shipping_cost < lowest_shipping_cost:
-                lowest_shipping_cost = shipping_cost
+    except TypeError:
+        try:
+            shipping_cost = response.reply.Item.ShippingDetails.ShippingServiceOptions
+            lowest_shipping_cost = float(shipping_cost.ShippingServiceCost.value)
 
-    except AttributeError:
-        return price
+        except AttributeError:
+            return price
+
+    else:
+        try:
+            for shipping_cost_info in response.reply.Item.ShippingDetails.ShippingServiceOptions:
+                shipping_cost = float(shipping_cost_info.ShippingServiceCost.value)
+
+                if shipping_cost < lowest_shipping_cost:
+                    lowest_shipping_cost = shipping_cost
+
+        except AttributeError:
+            return price
 
     return price + lowest_shipping_cost
 

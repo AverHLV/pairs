@@ -11,7 +11,7 @@ from smtplib import SMTPException
 from utils import secret_dict, logger
 from .tokens import account_activation_token
 from .models import CustomUser
-from .forms import SignUpForm
+from .forms import SignUpForm, PasswordResetForm
 
 
 def signup(request):
@@ -42,6 +42,38 @@ def signup(request):
                 logger.warning('SMTP exception: {0}. For user: {1}'.format(e, user.username))
 
             return redirect('/auth/activation/sent/')
+
+        else:
+            context['form'] = form
+
+    return render_to_response('form.html', context)
+
+
+def reset_password(request):
+    context = {'form': PasswordResetForm(), 'user': request.user, 'action': '/auth/password_reset/',
+               'button_text': 'Submit'}
+    context.update(csrf(request))
+
+    if request.POST:
+        form = PasswordResetForm(request.POST)
+
+        if form.is_valid():
+            user = form.user
+
+            message = render_to_string('reset_email.html', {
+                'user': user,
+                'domain': get_current_site(request).domain,
+                'uid': str(urlsafe_base64_encode(force_bytes(user.pk)))[1:].replace("'", ""),
+                'token': account_activation_token.make_token(user)
+            })
+
+            try:
+                send_mail('AE Pairs account password reset', message, secret_dict['em_user'], [user.email])
+
+            except SMTPException as e:
+                logger.warning('SMTP exception: {0}. For user: {1}'.format(e, user.username))
+
+            return redirect('/auth/password_reset/sent/')
 
         else:
             context['form'] = form
