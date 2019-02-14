@@ -5,7 +5,7 @@
         <form onsubmit="set_loader();" action="{{ action }}" method="post">
             {% csrf_token %}
             {{ form|crispy }}
-            <p><a href="/auth/password_reset/">Forgot your password? (in development, not ready)</a></p>
+            <p><a href="/auth/reset/">Forgot your password?</a></p>
             <button type="submit">{{ button_text }}</button>
         </form>
     </div></div>

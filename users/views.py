@@ -1,4 +1,5 @@
 from django.contrib.auth import login
+from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import redirect, render_to_response
 from django.utils.encoding import force_bytes, force_text
@@ -9,7 +10,7 @@ from django.core.mail import send_mail
 from django.core.exceptions import ObjectDoesNotExist
 from smtplib import SMTPException
 from utils import secret_dict, logger
-from .tokens import account_activation_token
+from .tokens import account_activation_token, password_reset_token
 from .models import CustomUser
 from .forms import SignUpForm, PasswordResetForm
 
@@ -50,7 +51,9 @@ def signup(request):
 
 
 def reset_password(request):
-    context = {'form': PasswordResetForm(), 'user': request.user, 'action': '/auth/password_reset/',
+    """ Initiate password reset by entering username """
+
+    context = {'form': PasswordResetForm(), 'user': request.user, 'action': '/auth/reset/',
                'button_text': 'Submit'}
     context.update(csrf(request))
 
@@ -64,7 +67,7 @@ def reset_password(request):
                 'user': user,
                 'domain': get_current_site(request).domain,
                 'uid': str(urlsafe_base64_encode(force_bytes(user.pk)))[1:].replace("'", ""),
-                'token': account_activation_token.make_token(user)
+                'token': password_reset_token.make_token(user)
             })
 
             try:
@@ -73,10 +76,64 @@ def reset_password(request):
             except SMTPException as e:
                 logger.warning('SMTP exception: {0}. For user: {1}'.format(e, user.username))
 
-            return redirect('/auth/password_reset/sent/')
+            return render_to_response('message.html', {
+                'user': request.user,
+                'message': '''We've emailed you instructions for setting your password, 
+                if an account exists with the email you entered. You should receive them shortly.'''
+            })
 
         else:
             context['form'] = form
+
+    return render_to_response('form.html', context)
+
+
+def reset_password_confirm(request, uidb64, token):
+    """ Check password reset token and redirect to change password form """
+
+    uid = None
+
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        user = CustomUser.objects.get(pk=uid)
+
+    except (TypeError, ValueError, OverflowError, ObjectDoesNotExist):
+        user = None
+
+    if user is not None and password_reset_token.check_token(user, token):
+        return redirect('/auth/reset/change/{0}/'.format(uid))
+
+    else:
+        return render_to_response('message.html', {'user': request.user,
+                                                   'message': '''The reset link was invalid, 
+                                                    possibly because it already has been used.'''})
+
+
+def reset_password_input(request, uid):
+    """ Reset password and save user model """
+
+    try:
+        user = CustomUser.objects.get(pk=uid)
+
+    except ObjectDoesNotExist:
+        return render_to_response('message.html', {'user': request.user, 'message': 'User ID is invalid.'})
+
+    context = {'form': SetPasswordForm(user), 'user': request.user, 'action': '/auth/reset/change/{0}/'.format(uid),
+               'button_text': 'Change password'}
+    context.update(csrf(request))
+
+    if request.POST:
+        new_password = SetPasswordForm(user, request.POST)
+
+        if new_password.is_valid():
+            new_password.save()
+
+            return render_to_response('message.html', {
+                'user': request.user, 'message': 'Your password has been set. You may go ahead and sign in now.'
+            })
+
+        else:
+            context['form'] = new_password
 
     return render_to_response('form.html', context)
 

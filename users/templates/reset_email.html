@@ -4,4 +4,5 @@ To initiate the password reset process for your {{ user.get_username }} AE Pairs
 http://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
 
 If clicking the link above doesn't work, please copy and paste the URL in a new browser window instead.
+If you did not do this - ignore this message.
 {% endautoescape %}
