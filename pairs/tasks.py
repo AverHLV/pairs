@@ -476,27 +476,16 @@ def amazon_update(delay=constants.amazon_workflow_delay, get_price_delay=constan
             check_products(check_type='check_after', asins=asins)
 
 
-@shared_task(name='Delete old pairs')
-def delete_pairs():
-    """ Delete old pairs that do not appear in any order """
+@shared_task(name='Delete old unsuitable pairs')
+def delete_pairs_unsuitable():
+    """ Delete old pairs with unsuitable status """
 
     for pair in Pair.objects.filter(created__lte=datetime.now(get_current_timezone()) - timedelta(
-            days=constants.pair_days_live)).exclude(checked=4):
+            days=constants.pair_unsuitable_days_live)).filter(checked__gte=2):
         if not Order.objects.filter(items=pair).exists():
             pair.delete()
 
-    logger.info('Old pairs deleted')
-
-
-@shared_task(name='Delete old pairs with status 4')
-def delete_pairs_4_reason():
-    """ Delete old pairs with unsuitable status 4 """
-
-    for pair in Pair.objects.filter(created__lte=datetime.now(get_current_timezone()) - timedelta(
-            days=constants.pair_4_reason_days_live)).filter(checked=4):
-        pair.delete()
-
-    logger.info('Old pairs with status 4 deleted')
+    logger.info('Old pairs with unsuitable status deleted')
 
 
 @shared_task(name='Check new orders')

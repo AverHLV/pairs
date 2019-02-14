@@ -53,8 +53,7 @@ amazon_approximate_price_percent = {
 }
 
 # pairs tasks
-pair_days_live = 35
-pair_4_reason_days_live = 7
+pair_unsuitable_days_live = 7
 amazon_workflow_delay = 180  # seconds
 check_after_delay = 3600  # seconds
 
