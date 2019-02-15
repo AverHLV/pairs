@@ -26,7 +26,8 @@ pair_minimum = 30
 failure_reasons = {
     2: 'Different items',
     3: 'Different package contain',
-    4: 'Cannot be added to the store'
+    4: 'Cannot be added to the store',
+    6: 'Closed by owner'
 }
 
 # pairs forms

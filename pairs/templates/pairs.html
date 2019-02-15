@@ -23,6 +23,8 @@
                     <tr>
                         {% if user.is_moderator and show_check %}
                             <th>Check</th>
+                        {% elif not user.is_moderator and show_close %}
+                            <th>Close</th>
                         {% endif %}
 
                         <th>ASIN</th>
@@ -48,6 +50,17 @@
                                         <a onclick="modal({{ reasons }}, {{ pair.id }});" class="tooltips">
                                             <span>Set status for this pair</span>
                                             <button type="button">set</button>
+                                        </a>
+                                    </td>
+                                {% else %}
+                                    <td></td>
+                                {% endif %}
+                            {% elif not user.is_moderator and show_close %}
+                                {% if pair.checked < 2 %}
+                                    <td id="{{ pair.id }}_cl">
+                                        <a onclick="modal_close({{ reasons }}, {{ pair.id }});" class="tooltips">
+                                            <span>Close this pair</span>
+                                            <button type="button">x</button>
                                         </a>
                                     </td>
                                 {% else %}

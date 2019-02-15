@@ -19,7 +19,13 @@ function mark(result, id, reason) {
                 }
             }
 
-            $("#" + id + "_b").html("");
+            if (data['code'] == 6) {
+                $("#" + id + "_cl").html("");
+            }
+
+            else {
+                $("#" + id + "_b").html("");
+            }
         }
     });
 }
@@ -87,11 +93,22 @@ function modal(reasons, id) {
                     return;
                 }
 
-                reason = 'none';
-                mark(result, id, reason);
+                mark(result, id, "none");
             }
         }
     });
+}
+
+function modal_close(reasons, id) {
+    // modal form for closing pair by user
+
+    bootbox.confirm("Are you sure you want to close this pair? You still can change this pair in future.",
+        function(result) {
+            if (result == true) {
+                mark("6", id, "none");
+            }
+        }
+    );
 }
 
 function modal_price(id, amazon_price) {

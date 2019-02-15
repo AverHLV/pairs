@@ -54,6 +54,7 @@ ROOT_URLCONF = 'config.urls'
 BASE_DIR = Path(__file__).ancestor(3)
 BASE_NAME = BASE_DIR[BASE_DIR.rfind('\\') + 1:]
 STATIC_ROOT = BASE_DIR.child('static')
+STATIC_VERSION = '1.0'
 
 STATICFILES_DIRS = (
     BASE_DIR.child('assets'),
@@ -72,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'processors.version'
             ],
         },
     },

@@ -15,10 +15,8 @@ from .forms import PairForm, SearchForm, OrderProfitsForm, OrderReturnForm, Orde
 def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
     """ Display all pairs for current user (or all pairs for moderator) in checked and created order """
 
-    show_reasons = False
-    show_check = False
-    progress = None
-    empty_orders_message = None
+    show_reasons, show_check, show_close = False, False, False
+    progress, empty_orders_message = None, None
     pairs = Pair.objects.none().order_by('checked', '-created')
 
     if not request.user.is_anonymous:
@@ -44,12 +42,18 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
                 show_reasons = True
                 break
 
-        # show 'Check' column or not
+        # show 'Check' column for moderator or 'Close' column for ordinary user
 
         if request.user.is_moderator:
             for pair in pairs.object_list:
                 if not pair.checked:
                     show_check = True
+                    break
+
+        else:
+            for pair in pairs.object_list:
+                if pair.checked < 2:
+                    show_close = True
                     break
 
         progress = int((request.user.pairs_count * 100) / constants.pair_minimum)
@@ -61,6 +65,7 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
                                              'reasons': constants.failure_reasons,
                                              'show_reasons': show_reasons,
                                              'show_check': show_check,
+                                             'show_close': show_close,
                                              'progress': progress,
                                              'pair_min': constants.pair_minimum,
                                              'empty': empty_orders_message,
@@ -126,13 +131,15 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
 
 @is_ajax
 @login_required
-@moderator_required
-def mark_as_checked(_, pair_id, result, reason, __=None):
+def mark_as_checked(request, pair_id, result, reason, __=None):
     """ Mark requested pair as checked by ajax """
+
+    if not request.user.is_moderator and int(result) != 6:
+        raise PermissionDenied
 
     pair = get_object_or_404(Pair, id=pair_id)
 
-    if pair.checked:
+    if pair.checked and request.user.is_moderator:
         return JsonResponse({'status': 'Already checked'})
 
     pair.checked = int(result)
