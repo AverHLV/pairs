@@ -127,7 +127,7 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
 @is_ajax
 @login_required
 @moderator_required
-def mark_as_checked(_, pair_id, result, reason):
+def mark_as_checked(_, pair_id, result, reason, __=None):
     """ Mark requested pair as checked by ajax """
 
     pair = get_object_or_404(Pair, id=pair_id)
