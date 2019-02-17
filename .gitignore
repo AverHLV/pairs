@@ -7,5 +7,6 @@ run_broker.py
 run_server.py
 run_worker.py
 run_shell.py
+chromedriver
 chromedriver.exe
 buyer_secret.json
