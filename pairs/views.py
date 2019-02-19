@@ -88,7 +88,7 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
 
             for order in orders:
                 if owner in order.get_owners_names():
-                    filtered_orders |= Order.objects.get(pk=order.id)
+                    filtered_orders |= Order.objects.filter(pk=order.id)
 
             orders = filtered_orders.order_by('all_set', '-purchase_date')
             empty_orders_message = 'Not found the orders, which include your added pairs.'
