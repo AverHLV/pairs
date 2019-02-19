@@ -11,7 +11,7 @@ class SeleniumBuyer(object):
     item_page_url = 'https://www.ebay.com/itm/{0}'
     seller_message = 'Dear seller, please put no price tags or ads at the package. I will be grateful!'
 
-    def __init__(self, credentials, payment_cred, driver_path='chromedriver.exe', wait_page_load_delay=7,
+    def __init__(self, credentials, payment_cred, driver_path='chromedriver', wait_page_load_delay=7,
                  headless=True):
         options = Options()
 
@@ -226,4 +226,4 @@ if __name__ == '__main__':
     }
 
     buyer = SeleniumBuyer(eb_credentials, pp_credentials, headless=False)
-    buyer.purchase(391418105928, ship_info=info, confirm_purchase=False)
+    buyer.purchase(391418105928, ship_info=info)
