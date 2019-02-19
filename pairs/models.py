@@ -77,6 +77,7 @@ class Order(TimeStamped):
     total_profit = models.FloatField(default=0)
     items = models.ManyToManyField(Pair)
     multi = models.BooleanField(default=False)
+    items_counts = JSONField()
     owners_profits = JSONField(null=True, blank=True)
     shipping_info = JSONField(null=True, blank=True)
     all_set = models.BooleanField(default=False)

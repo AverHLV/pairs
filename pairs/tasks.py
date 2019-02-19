@@ -503,91 +503,115 @@ def check_orders():
         return
 
     if not len(response.parsed['Orders']):
-        logger.critical('There are no orders in response.')
+        logger.warning('There are no orders in response.')
         return
 
-    for order in response.parsed['Orders']['Order']:
-        if order['OrderStatus']['value'] == 'Unshipped':
-            new_order = Order()
-            new_order.order_id = order['AmazonOrderId']['value']
+    try:
+        response.parsed['Orders']['Order'][0]
 
-            # parse order shipping info
+    except KeyError:
+        process_order(response.parsed['Orders']['Order'])
 
+    else:
+        for order in response.parsed['Orders']['Order']:
+            process_order(order)
+
+    logger.info('Check for new orders complete.')
+
+
+def process_order(order):
+    """ Process Amazon order from ListOrders response """
+
+    if order['OrderStatus']['value'] != 'Unshipped':
+        return
+
+    new_order = Order()
+    new_order.order_id = order['AmazonOrderId']['value']
+
+    # check if order already exists
+
+    if Order.objects.filter(order_id=new_order.order_id).exists():
+        return
+
+    # parse order shipping info
+
+    try:
+        order['ShippingAddress']
+
+    except KeyError:
+        pass
+
+    else:
+        new_order.shipping_info = {}
+
+        for field in shipping_info_fields:
             try:
-                order['ShippingAddress']
+                new_order.shipping_info[field] = order['ShippingAddress'][field]['value']
 
             except KeyError:
+                continue
+
+    # parse order items
+
+    items = []
+
+    try:
+        response_order = amazon_orders_api.api.list_order_items(new_order.order_id)
+
+    except amazon_orders_api.connection_error as e:
+        logger.warning('Amazon Orders api unhandled error: {0}.'.format(e))
+        return
+
+    try:
+        response_order.parsed['OrderItems']['OrderItem'][0]
+
+    except KeyError:
+        # in one item case
+
+        try:
+            item = Pair.objects.get(asin=response_order.parsed['OrderItems']['OrderItem']['ASIN']['value'])
+
+        except ObjectDoesNotExist:
+            return
+
+        quantity = int(response_order.parsed['OrderItems']['OrderItem']['QuantityOrdered']['value'])
+        new_order.items_counts = {item.id: quantity}
+
+        new_order.amazon_price = float(response_order.parsed['OrderItems']['OrderItem']['ItemPrice']['Amount']
+                                       ['value'])
+        items.append(item)
+
+    else:
+        # in multiple items case
+
+        amazon_price = 0
+        items_counts = {}
+
+        for item in response_order.parsed['OrderItems']['OrderItem']:
+            try:
+                item = Pair.objects.get(asin=item['ASIN']['value'])
+
+            except ObjectDoesNotExist:
                 pass
 
             else:
-                for field in shipping_info_fields:
-                    try:
-                        new_order.shipping_info[field] = order['ShippingAddress'][field]['value']
+                items_counts[item.id] = int(item['QuantityOrdered']['value'])
 
-                    except KeyError:
-                        continue
-
-            # check if order already exists
-
-            if Order.objects.filter(order_id=new_order.order_id).exists():
-                continue
-
-            # parse order items
-
-            items = []
-
-            try:
-                response_order = amazon_orders_api.api.list_order_items(new_order.order_id)
-
-            except amazon_orders_api.connection_error as e:
-                logger.warning('Amazon Orders api unhandled error: {0}.'.format(e))
-                continue
-
-            try:
-                response_order.parsed['OrderItems']['OrderItem'][0]
-
-            except KeyError:
-                # in one item case
-
-                try:
-                    item = Pair.objects.get(asin=response_order.parsed['OrderItems']['OrderItem']['ASIN']['value'])
-
-                except ObjectDoesNotExist:
-                    continue
-
-                new_order.amazon_price = float(response_order.parsed['OrderItems']['OrderItem']['ItemPrice']['Amount']
-                                               ['value'])
+                amazon_price += float(item['ItemPrice']['Amount']['value'])
                 items.append(item)
 
-            else:
-                # in multiple items case
+        new_order.items_counts = items_counts
+        new_order.amazon_price = amazon_price
 
-                amazon_price = 0
+    if not len(items):
+        return
 
-                for item in response_order.parsed['OrderItems']['OrderItem']:
-                    try:
-                        item = Pair.objects.get(asin=item['ASIN']['value'])
-
-                    except ObjectDoesNotExist:
-                        pass
-
-                    else:
-                        amazon_price += float(item['ItemPrice']['Amount']['value'])
-                        items.append(item)
-
-                new_order.amazon_price = amazon_price
-
-            if not len(items):
-                continue
-
-            date = order['PurchaseDate']['value']
-            date = datetime.strptime(date[:date.find('.')], '%Y-%m-%dT%H:%M:%S') - timedelta(hours=8)
-            new_order.purchase_date = date.date()
-            new_order.save()
-            new_order.items.add(*items)
-            new_order.set_multi()
-
-    logger.info('Check for new orders complete.')
+    date = order['PurchaseDate']['value']
+    date = datetime.strptime(date[:date.find('.')], '%Y-%m-%dT%H:%M:%S') - timedelta(hours=8)
+    new_order.purchase_date = date.date()
+    new_order.save()
+    new_order.items.add(*items)
+    new_order.set_multi()
 
 
 class WorkflowError(Exception):
