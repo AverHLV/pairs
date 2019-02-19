@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render_to_response, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -10,6 +10,8 @@ from decorators import moderator_required, is_ajax
 from datetime import datetime, timedelta
 from .models import Pair, Order, CustomUser
 from .forms import PairForm, SearchForm, OrderProfitsForm, OrderReturnForm, OrderFilterForm
+
+# TODO: remake user instance with render shortcut (all apps)
 
 
 def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
@@ -58,18 +60,18 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
 
         progress = int((request.user.pairs_count * 100) / constants.pair_minimum)
 
-    return render_to_response('pairs.html', {'pairs': pairs,
-                                             'page_range': constants.page_range,
-                                             'current_page': page_number,
-                                             'user': request.user,
-                                             'reasons': constants.failure_reasons,
-                                             'show_reasons': show_reasons,
-                                             'show_check': show_check,
-                                             'show_close': show_close,
-                                             'progress': progress,
-                                             'pair_min': constants.pair_minimum,
-                                             'empty': empty_orders_message,
-                                             'search': for_search})
+    return render(request, 'pairs.html', {'pairs': pairs,
+                                          'page_range': constants.page_range,
+                                          'current_page': page_number,
+                                          'user': request.user,
+                                          'reasons': constants.failure_reasons,
+                                          'show_reasons': show_reasons,
+                                          'show_check': show_check,
+                                          'show_close': show_close,
+                                          'progress': progress,
+                                          'pair_min': constants.pair_minimum,
+                                          'empty': empty_orders_message,
+                                          'search': for_search})
 
 
 @login_required
@@ -125,14 +127,14 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
     profits = [order.calculate_profits(owner) for order in orders]
     orders = Paginator(orders, constants.on_page_obj_number).page(page_number)
     
-    return render_to_response('orders.html', {'orders': orders,
-                                              'profits': profits,
-                                              'page_range': constants.page_range,
-                                              'current_page': page_number,
-                                              'user': request.user,
-                                              'empty': empty_orders_message,
-                                              'search': for_search,
-                                              'form': form})
+    return render(request, 'orders.html', {'orders': orders,
+                                           'profits': profits,
+                                           'page_range': constants.page_range,
+                                           'current_page': page_number,
+                                           'user': request.user,
+                                           'empty': empty_orders_message,
+                                           'search': for_search,
+                                           'form': form})
 
 
 @is_ajax
@@ -223,7 +225,7 @@ def add_pair(request):
         else:
             context['form'] = new_pair
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 @login_required
@@ -258,7 +260,7 @@ def change_pair(request, pair_id):
         else:
             context['form'] = new_pair
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 @login_required
@@ -266,10 +268,10 @@ def profits_table(request):
     """ Display profits table for price intervals """
 
     intervals = [(constants.profit_intervals[key], key) for key in constants.profit_intervals.keys()]
-    return render_to_response('profit_table.html', {'intervals': sorted(intervals, key=lambda x: x[1]),
-                                                    'user': request.user,
-                                                    'profit_percentage': constants.profit_percentage,
-                                                    'buffer': constants.profit_buffer})
+    return render(request, 'profit_table.html', {'intervals': sorted(intervals, key=lambda x: x[1]),
+                                                 'user': request.user,
+                                                 'profit_percentage': constants.profit_percentage,
+                                                 'buffer': constants.profit_buffer})
 
 
 @login_required
@@ -298,7 +300,7 @@ def search_for(request):
 
             return pairs_paginator(request, for_search=True, search_pair=pairs.order_by('-created'))
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 @login_required
@@ -349,7 +351,7 @@ def order_profits(request, order_id):
         else:
             context['form'] = form
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 @login_required
@@ -388,4 +390,4 @@ def order_return(request, order_id):
         else:
             context['form'] = form
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)

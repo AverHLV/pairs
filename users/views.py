@@ -1,7 +1,7 @@
 from django.contrib.auth import login
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.sites.shortcuts import get_current_site
-from django.shortcuts import redirect, render_to_response
+from django.shortcuts import redirect, render
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
@@ -47,7 +47,7 @@ def signup(request):
         else:
             context['form'] = form
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 def reset_password(request):
@@ -76,7 +76,7 @@ def reset_password(request):
             except SMTPException as e:
                 logger.warning('SMTP exception: {0}. For user: {1}'.format(e, user.username))
 
-            return render_to_response('message.html', {
+            return render(request, 'message.html', {
                 'user': request.user,
                 'message': '''We've emailed you instructions for setting your password, 
                 if an account exists with the email you entered. You should receive them shortly.'''
@@ -85,7 +85,7 @@ def reset_password(request):
         else:
             context['form'] = form
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 def reset_password_confirm(request, uidb64, token):
@@ -104,9 +104,9 @@ def reset_password_confirm(request, uidb64, token):
         return redirect('/auth/reset/change/{0}/'.format(uid))
 
     else:
-        return render_to_response('message.html', {'user': request.user,
-                                                   'message': '''The reset link was invalid, 
-                                                    possibly because it already has been used.'''})
+        return render(request, 'message.html', {'user': request.user,
+                                                'message': '''The reset link was invalid, 
+                                                possibly because it already has been used.'''})
 
 
 def reset_password_input(request, uid):
@@ -116,7 +116,7 @@ def reset_password_input(request, uid):
         user = CustomUser.objects.get(pk=uid)
 
     except ObjectDoesNotExist:
-        return render_to_response('message.html', {'user': request.user, 'message': 'User ID is invalid.'})
+        return render(request, 'message.html', {'user': request.user, 'message': 'User ID is invalid.'})
 
     context = {'form': SetPasswordForm(user), 'user': request.user, 'action': '/auth/reset/change/{0}/'.format(uid),
                'button_text': 'Change password'}
@@ -128,26 +128,26 @@ def reset_password_input(request, uid):
         if new_password.is_valid():
             new_password.save()
 
-            return render_to_response('message.html', {
+            return render(request, 'message.html', {
                 'user': request.user, 'message': 'Your password has been set. You may go ahead and sign in now.'
             })
 
         else:
             context['form'] = new_password
 
-    return render_to_response('form.html', context)
+    return render(request, 'form.html', context)
 
 
 def activation_sent(request):
-    return render_to_response('message.html', {'user': request.user,
-                                               'message': '''We sent a message to your email. Please confirm your 
-                                               email address to complete the registration.'''})
+    return render(request, 'message.html', {'user': request.user,
+                                            'message': '''We sent a message to your email. Please confirm your 
+                                            email address to complete the registration.'''})
 
 
 def activation_success(request):
-    response = render_to_response('message.html', {'user': request.user,
-                                                   'message': '''Your account has been activated. You will be 
-                                                   redirected to Home page after 5 seconds.'''})
+    response = render(request, 'message.html', {'user': request.user,
+                                                'message': '''Your account has been activated. You will be 
+                                                redirected to Home page after 5 seconds.'''})
     response['Refresh'] = '5;URL=/'
     return response
 
@@ -171,6 +171,6 @@ def activate(request, uidb64, token):
         return redirect('/auth/activation/success/')
 
     else:
-        return render_to_response('message.html', {'user': request.user,
-                                                   'message': '''The confirmation link was invalid, 
-                                                   possibly because it already has been used.'''})
+        return render(request, 'message.html', {'user': request.user,
+                                                'message': '''The confirmation link was invalid, 
+                                                possibly because it already has been used.'''})

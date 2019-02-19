@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from mpld3 import fig_to_html, plugins
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import get_current_timezone
 from datetime import datetime
@@ -16,8 +16,8 @@ from users.models import CustomUser
 def users(request):
     """ Users stats page """
 
-    return render_to_response('users.html', {'user': request.user, 'users': CustomUser.objects.order_by('username'),
-                                             'pair_min': pair_minimum})
+    return render(request, 'users.html', {'user': request.user, 'users': CustomUser.objects.order_by('username'),
+                                          'pair_min': pair_minimum})
 
 
 @login_required
@@ -91,5 +91,5 @@ def graphs(request):
 
     fig3.tight_layout()
 
-    return render_to_response('graphs.html', {'figure1': fig_to_html(fig1), 'figure2': fig_to_html(fig2),
-                                              'figure3': fig_to_html(fig3), 'user': request.user})
+    return render(request, 'graphs.html', {'figure1': fig_to_html(fig1), 'figure2': fig_to_html(fig2),
+                                           'figure3': fig_to_html(fig3), 'user': request.user})

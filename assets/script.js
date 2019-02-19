@@ -142,11 +142,6 @@ function modal_price(id, amazon_price) {
                     return;
                 }
 
-                if (result >= amazon_price * 0.85) {
-                    alert("eBay price must be lower than 85% of Amazon price.");
-                    return;
-                }
-
                 price(result, id);
             }
         }

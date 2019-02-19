@@ -11,7 +11,7 @@ class SeleniumBuyer(object):
     item_page_url = 'https://www.ebay.com/itm/{0}'
     seller_message = 'Dear seller, please put no price tags or ads at the package. I will be grateful!'
 
-    def __init__(self, credentials, payment_cred, driver_path='chromedriver', wait_page_load_delay=7,
+    def __init__(self, credentials, payment_cred, driver_path='chromedriver.exe', wait_page_load_delay=7,
                  headless=True):
         options = Options()
 
@@ -51,6 +51,33 @@ class SeleniumBuyer(object):
             self.driver.save_screenshot('selenium_buyer_page_exc.png')
             return
 
+    def choose_paypal(self):
+        try:
+            self.driver.find_element_by_xpath('//input[@value="PAYPAL"]').click()
+            sleep(self.wait_page_load_delay)
+
+            self.driver.switch_to.window(self.driver.window_handles[1])
+            self.driver.find_element_by_id('email').send_keys(self.payment_credentials[0])
+            self.driver.find_element_by_id('password').send_keys(self.payment_credentials[1])
+            self.driver.find_element_by_id('btnLogin').click()
+            sleep(self.wait_page_load_delay)
+
+            try:
+                self.driver.find_element_by_xpath('//button[@value="acceptRememberMe"]').click()
+
+            except NoSuchElementException:
+                pass
+
+            else:
+                sleep(self.wait_page_load_delay)
+
+            self.driver.switch_to.window(self.driver.window_handles[0])
+
+        except NoSuchElementException:
+            print('Payment method choosing failed')
+            self.driver.save_screenshot('selenium_buyer_page_exc.png')
+            return
+
     def purchase(self, ebay_id, ship_info, confirm_purchase=True):
         """ Open, fill and submit eBay item purchase form """
 
@@ -66,23 +93,6 @@ class SeleniumBuyer(object):
             print('BuyItNow button not found')
             self.driver.save_screenshot('selenium_buyer_page_exc.png')
             return
-
-        # choose payment method if not chosen yet
-
-        try:
-            self.driver.find_element_by_xpath('//span[text()="{0}"]'.format(self.payment_credentials[0]))
-
-        except NoSuchElementException:
-            try:
-                self.driver.find_element_by_xpath('//input[@value="PAYPAL"]').click()
-                self.driver.find_element_by_id('email').send_keys(self.payment_credentials[0])
-                self.driver.find_element_by_id('password').send_keys(self.payment_credentials[1])
-                self.driver.find_element_by_id('btnLogin').click()
-
-            except NoSuchElementException:
-                print('Payment method choosing failed')
-                self.driver.save_screenshot('selenium_buyer_page_exc.png')
-                return
 
         # fill and submit ship to form
 
@@ -145,12 +155,30 @@ class SeleniumBuyer(object):
 
         sleep(self.wait_page_load_delay)
 
+        # choose payment method if not chosen yet
+
+        try:
+            self.driver.find_element_by_xpath('//span[text()="{0}"]'.format(self.payment_credentials[0]))
+
+        except NoSuchElementException:
+            try:
+                button = self.driver.find_element_by_xpath('//a[@data-test-id="SHOW_MORE"]')
+
+            except NoSuchElementException:
+                self.choose_paypal()
+
+            else:
+                button.click()
+                sleep(self.wait_page_load_delay)
+                self.choose_paypal()
+
         if not confirm_purchase:
             print('Done')
-            self.driver.save_screenshot('selenium_buyer_page_finish.png')
             return
 
         # confirm purchase
+
+        sleep(self.wait_page_load_delay)
 
         try:
             self.driver.find_element_by_xpath('//button[@data-test-id="CONFIRM_AND_PAY_BUTTON"]').click()
@@ -187,15 +215,15 @@ if __name__ == '__main__':
     pp_credentials = (secret['pp_email'], secret['pp_password'])
 
     info = {
-        'first_name': 'Azaza1',
-        'last_name': 'Azaza2',
-        'address': 'ololo address',
-        'city': 'city',
-        'region': 'Alabama',
-        'zip_code': '33024',
+        'first_name': 'Amy',
+        'last_name': 'Cross',
+        'address': '217 booter ln',
+        'city': 'Chazy',
+        'region': 'New York',
+        'zip_code': '12921',
         'phone_number': '0982438831',
-        'count': '2'
+        'count': '1'
     }
 
-    buyer = SeleniumBuyer(eb_credentials, pp_credentials)
-    buyer.purchase(223346308239, ship_info=info, confirm_purchase=False)
+    buyer = SeleniumBuyer(eb_credentials, pp_credentials, headless=False)
+    buyer.purchase(391418105928, ship_info=info, confirm_purchase=False)
