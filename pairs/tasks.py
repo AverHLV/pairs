@@ -535,6 +535,8 @@ def process_order(order):
 
     # parse order shipping info
 
+    new_order.shipping_info = {'BuyerName': order['BuyerName']['value']}
+
     try:
         order['ShippingAddress']
 
@@ -542,8 +544,6 @@ def process_order(order):
         pass
 
     else:
-        new_order.shipping_info = {}
-
         for field in shipping_info_fields:
             try:
                 new_order.shipping_info[field] = order['ShippingAddress'][field]['value']
