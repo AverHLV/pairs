@@ -110,6 +110,12 @@
                                             {% define "https://www.amazon.com/dp/"|addstr:item|addstr:"/" as am_link %}
                                             <td>
                                                 <a href="{{ am_link }}" target="_blank">{{ item }}</a>
+
+                                                <span title="Item quantity in this order">
+                                                    {% define item.id|stringformat:"i" as item_id %}
+                                                    ({{ order.items_counts|get_item:item_id }})
+                                                </span>
+
                                                 <a class="tooltips" href="/search/{{ item }}/" target="_blank">
                                                     <span>Find this pair</span>
                                                     <button type="button">?</button>
