@@ -13,3 +13,4 @@ jinja2==2.10
 lxml==4.2.5
 kombu==4.2.1
 selenium==3.141.0
+requests==2.20.0

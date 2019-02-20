@@ -1,5 +1,6 @@
 from django import forms
 from re import search
+from requests.adapters import ConnectionError
 from config import constants
 from utils import ebay_trading_api, amazon_products_api, logger
 from .parsers import get_rank_from_response, get_price_from_response, get_delivery_time, get_ebay_price_from_response
@@ -248,6 +249,11 @@ class PairForm(forms.ModelForm):
 
             try:
                 response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
+
+            except ConnectionError:
+                raise forms.ValidationError({
+                    'Remote end closed connection without response from eBay. Please try again.'
+                }, code='eb17')
 
             except ebay_trading_api.connection_error as e:
                 if e.response.dict()['Errors']['ErrorCode'] == '17':

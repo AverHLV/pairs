@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
+from requests.adapters import ConnectionError
 from users.models import CustomUser
 from config import constants
 from utils import ebay_trading_api, logger
@@ -53,16 +54,20 @@ class Pair(TimeStamped):
                 try:
                     response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
 
-                    if response.reply.Item.SellingStatus.ListingStatus == 'Active':
-                        id_q = int(response.reply.Item.Quantity) - int(response.reply.Item.SellingStatus.QuantitySold)
-                    else:
-                        id_q = 0
-
-                    quantity += id_q
-
                 except ebay_trading_api.connection_error as e:
                     logger.critical('eBay api unhandled error: {0}.'.format(e.response.dict()))
                     return
+
+                except ConnectionError:
+                    logger.critical('Remote end closed connection without response from eBay.')
+                    return
+
+                if response.reply.Item.SellingStatus.ListingStatus == 'Active':
+                    id_q = int(response.reply.Item.Quantity) - int(response.reply.Item.SellingStatus.QuantitySold)
+                else:
+                    id_q = 0
+
+                quantity += id_q
 
         self.quantity = quantity
 
