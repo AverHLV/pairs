@@ -30,6 +30,8 @@ class SeleniumBuyer(object):
         self.login(credentials)
 
     def login(self, credentials):
+        """ Log in on eBay using given credentials """
+
         self.driver.get(self.login_url)
 
         try:
@@ -52,31 +54,38 @@ class SeleniumBuyer(object):
             return
 
     def choose_paypal(self):
+        """ Choose PayPal as payment option on purchase details page """
+
         try:
             self.driver.find_element_by_xpath('//input[@value="PAYPAL"]').click()
             sleep(self.wait_page_load_delay)
 
+            # switch to opened log in window
             self.driver.switch_to.window(self.driver.window_handles[1])
+
             self.driver.find_element_by_id('email').send_keys(self.payment_credentials[0])
             self.driver.find_element_by_id('password').send_keys(self.payment_credentials[1])
             self.driver.find_element_by_id('btnLogin').click()
-            sleep(self.wait_page_load_delay)
-
-            try:
-                self.driver.find_element_by_xpath('//button[@value="acceptRememberMe"]').click()
-
-            except NoSuchElementException:
-                pass
-
-            else:
-                sleep(self.wait_page_load_delay)
-
-            self.driver.switch_to.window(self.driver.window_handles[0])
 
         except NoSuchElementException:
             print('Payment method choosing failed')
             self.driver.save_screenshot('selenium_buyer_page_exc.png')
             return
+
+        sleep(self.wait_page_load_delay)
+
+        # Click 'Remember Me' if exists
+
+        try:
+            self.driver.find_element_by_xpath('//button[@value="acceptRememberMe"]').click()
+
+        except NoSuchElementException:
+            pass
+
+        else:
+            sleep(self.wait_page_load_delay)
+
+        self.driver.switch_to.window(self.driver.window_handles[0])
 
     def purchase(self, ebay_id, ship_info, confirm_purchase=True):
         """ Open, fill and submit eBay item purchase form """
@@ -226,4 +235,4 @@ if __name__ == '__main__':
     }
 
     buyer = SeleniumBuyer(eb_credentials, pp_credentials, headless=False)
-    buyer.purchase(391418105928, ship_info=info)
+    buyer.purchase(391418105928, ship_info=info, confirm_purchase=False)
