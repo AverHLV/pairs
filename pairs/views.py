@@ -11,8 +11,6 @@ from datetime import datetime, timedelta
 from .models import Pair, Order, CustomUser
 from .forms import PairForm, SearchForm, OrderProfitsForm, OrderReturnForm, OrderFilterForm
 
-# TODO: remake user instance with render shortcut (all apps)
-
 
 def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
     """ Display all pairs for current user (or all pairs for moderator) in checked and created order """
@@ -60,26 +58,26 @@ def pairs_paginator(request, page_number=1, for_search=False, search_pair=None):
 
         progress = int((request.user.pairs_count * 100) / constants.pair_minimum)
 
-    return render(request, 'pairs.html', {'pairs': pairs,
-                                          'page_range': constants.page_range,
-                                          'current_page': page_number,
-                                          'user': request.user,
-                                          'reasons': constants.failure_reasons,
-                                          'show_reasons': show_reasons,
-                                          'show_check': show_check,
-                                          'show_close': show_close,
-                                          'progress': progress,
-                                          'pair_min': constants.pair_minimum,
-                                          'empty': empty_orders_message,
-                                          'search': for_search})
+    return render(request, 'pairs.html', {
+        'pairs': pairs,
+        'page_range': constants.page_range,
+        'current_page': page_number,
+        'reasons': constants.failure_reasons,
+        'show_reasons': show_reasons,
+        'show_check': show_check,
+        'show_close': show_close,
+        'progress': progress,
+        'pair_min': constants.pair_minimum,
+        'empty': empty_orders_message,
+        'search': for_search
+    })
 
 
 @login_required
 def orders_paginator(request, page_number=1, for_search=False, search_order=None):
     """ Find all orders for rendering and then filter for specific user (if not moderator) """
 
-    owner = None
-    form = None
+    owner, form = None, None
 
     if not for_search:
         orders = Order.objects.order_by('all_set', '-purchase_date')
@@ -127,14 +125,15 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
     profits = [order.calculate_profits(owner) for order in orders]
     orders = Paginator(orders, constants.on_page_obj_number).page(page_number)
     
-    return render(request, 'orders.html', {'orders': orders,
-                                           'profits': profits,
-                                           'page_range': constants.page_range,
-                                           'current_page': page_number,
-                                           'user': request.user,
-                                           'empty': empty_orders_message,
-                                           'search': for_search,
-                                           'form': form})
+    return render(request, 'orders.html', {
+        'orders': orders,
+        'profits': profits,
+        'page_range': constants.page_range,
+        'current_page': page_number,
+        'empty': empty_orders_message,
+        'search': for_search,
+        'form': form
+    })
 
 
 @is_ajax
@@ -203,7 +202,7 @@ def update_ebay_price(_, order_id, result, __=None):
 def add_pair(request):
     """ Create a Pair object or send validation errors """
 
-    context = {'user': request.user, 'form': PairForm(), 'action': '/add_pair/', 'button_text': 'Add pair'}
+    context = {'form': PairForm(), 'action': '/add_pair/', 'button_text': 'Add pair'}
     context.update(csrf(request))
 
     if request.POST:
@@ -237,7 +236,7 @@ def change_pair(request, pair_id):
     if pair.owner.username != request.user.username and not request.user.is_moderator:
         raise PermissionDenied
 
-    context = {'user': request.user, 'form': PairForm(initial={'asin': pair.asin, 'ebay_ids': pair.ebay_ids}),
+    context = {'form': PairForm(initial={'asin': pair.asin, 'ebay_ids': pair.ebay_ids}),
                'action': '/change_pair/{0}/'.format(pair_id), 'button_text': 'Change pair'}
     context.update(csrf(request))
 
@@ -268,18 +267,19 @@ def profits_table(request):
     """ Display profits table for price intervals """
 
     intervals = [(constants.profit_intervals[key], key) for key in constants.profit_intervals.keys()]
-    return render(request, 'profit_table.html', {'intervals': sorted(intervals, key=lambda x: x[1]),
-                                                 'user': request.user,
-                                                 'profit_percentage': constants.profit_percentage,
-                                                 'buffer': constants.profit_buffer})
+
+    return render(request, 'profit_table.html', {
+        'intervals': sorted(intervals, key=lambda x: x[1]),
+        'profit_percentage': constants.profit_percentage,
+        'buffer': constants.profit_buffer
+    })
 
 
 @login_required
 def search_for(request):
     """ Search specified objects for ordinary user or moderator """
 
-    context = {'form': SearchForm(request.user.is_moderator), 'user': request.user, 'action': '/search/',
-               'button_text': 'Search'}
+    context = {'form': SearchForm(request.user.is_moderator), 'action': '/search/', 'button_text': 'Search'}
     context.update(csrf(request))
 
     if request.POST:
@@ -325,7 +325,7 @@ def order_profits(request, order_id):
     if order.all_set:
         return redirect('/orders/')
 
-    context = {'form': OrderProfitsForm(order.get_owners_names(), order.amazon_price), 'user': request.user,
+    context = {'form': OrderProfitsForm(order.get_owners_names(), order.amazon_price),
                'action': '/orders/profits/' + str(order_id) + '/', 'button_text': 'Submit'}
     context.update(csrf(request))
 
@@ -364,8 +364,7 @@ def order_return(request, order_id):
     if order.returned:
         return redirect('/orders/')
 
-    context = {'form': OrderReturnForm(), 'user': request.user, 'action': '/orders/return/' + str(order_id) + '/',
-               'button_text': 'Submit'}
+    context = {'form': OrderReturnForm(), 'action': '/orders/return/' + str(order_id) + '/', 'button_text': 'Submit'}
     context.update(csrf(request))
 
     if request.POST:

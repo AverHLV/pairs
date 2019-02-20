@@ -32,12 +32,12 @@
         </div>
 
 	    <div>
-            {% if user.is_authenticated and user.email_checked %}
+            {% if request.user.is_authenticated and request.user.email_checked %}
                 <ul class="nav">
                     <li><a href="/">Home</a></li>
-                    <li><a href="/auth/logout/">Log out ({{ user.username }})</a></li>
+                    <li><a href="/auth/logout/">Log out ({{ request.user.username }})</a></li>
 
-                    {% if user.is_moderator %}
+                    {% if request.user.is_moderator %}
                         <li><a href="/stats/">Graphs</a></li>
                         <li><a href="/stats/users/">Users stats</a></li>
                     {% endif %}

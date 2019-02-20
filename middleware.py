@@ -1,6 +1,6 @@
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 
 
 class Http400(Exception):
@@ -27,11 +27,10 @@ class HttpCodesHandler(object):
             else:
                 message = 'Bad request.'
 
-            return render_to_response('message.html', {'message': message, 'user': request.user})
+            return render(request, 'message.html', {'message': message})
 
         if isinstance(exception, Http404):
-            return render_to_response('message.html', {'message': 'Page not found.', 'user': request.user})
+            return render(request, 'message.html', {'message': 'Page not found.'})
 
         if isinstance(exception, PermissionDenied):
-            return render_to_response('message.html', {'message': 'You are not authorised to visit this page.',
-                                                       'user': request.user})
+            return render(request, 'message.html', {'message': 'You are not authorised to visit this page.'})

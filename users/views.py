@@ -18,7 +18,7 @@ from .forms import SignUpForm, PasswordResetForm
 def signup(request):
     """ Create a user object and send an activation email """
 
-    context = {'form': SignUpForm(), 'user': request.user, 'action': '/auth/signup/', 'button_text': 'Sign up'}
+    context = {'form': SignUpForm(), 'action': '/auth/signup/', 'button_text': 'Sign up'}
     context.update(csrf(request))
 
     if request.POST:
@@ -53,8 +53,7 @@ def signup(request):
 def reset_password(request):
     """ Initiate password reset by entering username """
 
-    context = {'form': PasswordResetForm(), 'user': request.user, 'action': '/auth/reset/',
-               'button_text': 'Submit'}
+    context = {'form': PasswordResetForm(), 'action': '/auth/reset/', 'button_text': 'Submit'}
     context.update(csrf(request))
 
     if request.POST:
@@ -77,7 +76,6 @@ def reset_password(request):
                 logger.warning('SMTP exception: {0}. For user: {1}'.format(e, user.username))
 
             return render(request, 'message.html', {
-                'user': request.user,
                 'message': '''We've emailed you instructions for setting your password, 
                 if an account exists with the email you entered. You should receive them shortly.'''
             })
@@ -104,9 +102,9 @@ def reset_password_confirm(request, uidb64, token):
         return redirect('/auth/reset/change/{0}/'.format(uid))
 
     else:
-        return render(request, 'message.html', {'user': request.user,
-                                                'message': '''The reset link was invalid, 
-                                                possibly because it already has been used.'''})
+        return render(request, 'message.html', {
+            'message': 'The reset link was invalid, possibly because it already has been used.'
+        })
 
 
 def reset_password_input(request, uid):
@@ -116,9 +114,9 @@ def reset_password_input(request, uid):
         user = CustomUser.objects.get(pk=uid)
 
     except ObjectDoesNotExist:
-        return render(request, 'message.html', {'user': request.user, 'message': 'User ID is invalid.'})
+        return render(request, 'message.html', {'message': 'User ID is invalid.'})
 
-    context = {'form': SetPasswordForm(user), 'user': request.user, 'action': '/auth/reset/change/{0}/'.format(uid),
+    context = {'form': SetPasswordForm(user), 'action': '/auth/reset/change/{0}/'.format(uid),
                'button_text': 'Change password'}
     context.update(csrf(request))
 
@@ -129,7 +127,7 @@ def reset_password_input(request, uid):
             new_password.save()
 
             return render(request, 'message.html', {
-                'user': request.user, 'message': 'Your password has been set. You may go ahead and sign in now.'
+                'message': 'Your password has been set. You may go ahead and sign in now.'
             })
 
         else:
@@ -139,15 +137,17 @@ def reset_password_input(request, uid):
 
 
 def activation_sent(request):
-    return render(request, 'message.html', {'user': request.user,
-                                            'message': '''We sent a message to your email. Please confirm your 
-                                            email address to complete the registration.'''})
+    return render(request, 'message.html', {
+        'message':
+            'We sent a message to your email. Please confirm your email address to complete the registration.'
+    })
 
 
 def activation_success(request):
-    response = render(request, 'message.html', {'user': request.user,
-                                                'message': '''Your account has been activated. You will be 
-                                                redirected to Home page after 5 seconds.'''})
+    response = render(request, 'message.html', {
+        'message': 'Your account has been activated. You will be redirected to Home page after 5 seconds.'
+    })
+    
     response['Refresh'] = '5;URL=/'
     return response
 
@@ -171,6 +171,6 @@ def activate(request, uidb64, token):
         return redirect('/auth/activation/success/')
 
     else:
-        return render(request, 'message.html', {'user': request.user,
-                                                'message': '''The confirmation link was invalid, 
-                                                possibly because it already has been used.'''})
+        return render(request, 'message.html', {
+            'message': 'The confirmation link was invalid, possibly because it already has been used.'
+        })

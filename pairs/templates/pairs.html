@@ -1,7 +1,7 @@
 {% extends 'main.html' %}
 {% load pairs_extras %}
 {% block content %}
-    {% if user.is_authenticated and user.email_checked %}
+    {% if request.user.is_authenticated and request.user.email_checked %}
         {% if not search %}
             {% if 0 < progress and progress < 30 %}
                 {% define "#c0804e" as pro_color %}
@@ -12,7 +12,7 @@
             {% endif %}
 
             <div class="progress" title="Try to add the specified number of pairs in this month"
-                 data-label="{{ user.pairs_count }} / {{ pair_min }}">
+                 data-label="{{ request.user.pairs_count }} / {{ pair_min }}">
                 <span class="value" style="width: {{ progress }}%; background-color: {{ pro_color }}"></span>
             </div>
         {% endif %}
@@ -21,9 +21,9 @@
             {% if pairs %}
                 <table id="pairs">
                     <tr>
-                        {% if user.is_moderator and show_check %}
+                        {% if request.user.is_moderator and show_check %}
                             <th>Check</th>
-                        {% elif not user.is_moderator and show_close %}
+                        {% elif not request.user.is_moderator and show_close %}
                             <th>Close</th>
                         {% endif %}
 
@@ -37,14 +37,14 @@
 
                         <th>Count</th>
 
-                        {% if user.is_moderator %}
+                        {% if request.user.is_moderator %}
                             <th>Owner</th>
                         {% endif %}
                     </tr>
 
                     {% for pair in pairs %}
                         <tr>
-                            {% if user.is_moderator and show_check %}
+                            {% if request.user.is_moderator and show_check %}
                                 {% if not pair.checked %}
                                     <td id="{{ pair.id }}_b">
                                         <a onclick="modal({{ reasons }}, {{ pair.id }});" class="tooltips">
@@ -55,7 +55,7 @@
                                 {% else %}
                                     <td></td>
                                 {% endif %}
-                            {% elif not user.is_moderator and show_close %}
+                            {% elif not request.user.is_moderator and show_close %}
                                 {% if pair.checked < 2 %}
                                     <td id="{{ pair.id }}_cl">
                                         <a onclick="modal_close({{ reasons }}, {{ pair.id }});" class="tooltips">
@@ -125,7 +125,7 @@
 
                             <td style="color: {{ q_color }};"><b>{{ pair.quantity }}</b></td>
 
-                            {% if user.is_moderator %}
+                            {% if request.user.is_moderator %}
                                 <td>{{ pair.owner.username }}</td>
                             {% endif %}
                         </tr>

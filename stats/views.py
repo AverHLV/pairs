@@ -16,8 +16,7 @@ from users.models import CustomUser
 def users(request):
     """ Users stats page """
 
-    return render(request, 'users.html', {'user': request.user, 'users': CustomUser.objects.order_by('username'),
-                                          'pair_min': pair_minimum})
+    return render(request, 'users.html', {'users': CustomUser.objects.order_by('username'), 'pair_min': pair_minimum})
 
 
 @login_required
@@ -91,5 +90,6 @@ def graphs(request):
 
     fig3.tight_layout()
 
-    return render(request, 'graphs.html', {'figure1': fig_to_html(fig1), 'figure2': fig_to_html(fig2),
-                                           'figure3': fig_to_html(fig3), 'user': request.user})
+    return render(request, 'graphs.html', {'figure1': fig_to_html(fig1),
+                                           'figure2': fig_to_html(fig2),
+                                           'figure3': fig_to_html(fig3)})

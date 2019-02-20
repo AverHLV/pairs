@@ -4,7 +4,7 @@
 {% block content %}
     {% if not search %}
         <div class="profit">
-            <span id="profit_span" style="padding: 15px;">Total profit: {{ user.profit|floatformat:2 }}$</span>
+            <span id="profit_span" style="padding: 15px;">Total profit: {{ request.user.profit|floatformat:2 }}$</span>
         </div>
     {% endif %}
 
@@ -23,7 +23,7 @@
                         <th>Date</th>
                         <th>Shipping info</th>
 
-                        {% if user.is_moderator %}
+                        {% if request.user.is_moderator %}
                             <th>Amazon</th>
                             <th>eBay</th>
                             <th>Income</th>
@@ -43,7 +43,7 @@
                                 {% else %}
                                     {{ order.order_id }}
 
-                                    {% if order.all_set and user.is_moderator %}
+                                    {% if order.all_set and request.user.is_moderator %}
                                         <a class="tooltips" href="/orders/return/{{ order.id }}">
                                             <span>Make return</span>
                                             <button type="button">&dArr;</button>
@@ -82,7 +82,7 @@
                                 {% endif %}
                             </td>
 
-                            {% if user.is_moderator %}
+                            {% if request.user.is_moderator %}
                                 <td>{{ order.amazon_price|floatformat:2 }}$</td>
 
                                 {% if not order.all_set %}
