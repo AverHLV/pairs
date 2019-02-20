@@ -7,4 +7,4 @@ Website powered by Django. Requires python3.x.
 * stats: displaying users and orders statistics by tables and interactive matplotlib figures.
 
 ## Tasks
-Backend tasks powered by celery and django-celery-beat broker.
+Backend tasks powered by celery and django-celery-beat scheduler.
