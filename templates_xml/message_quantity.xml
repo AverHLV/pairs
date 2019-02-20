@@ -4,5 +4,6 @@
     <Inventory>
         <SKU></SKU>
         <Quantity></Quantity>
+        <FulfillmentLatency>4</FulfillmentLatency>
     </Inventory>
 </Message>
