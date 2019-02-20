@@ -90,6 +90,8 @@ def graphs(request):
 
     fig3.tight_layout()
 
-    return render(request, 'graphs.html', {'figure1': fig_to_html(fig1),
-                                           'figure2': fig_to_html(fig2),
-                                           'figure3': fig_to_html(fig3)})
+    return render(request, 'graphs.html', {
+        'figure1': fig_to_html(fig1),
+        'figure2': fig_to_html(fig2),
+        'figure3': fig_to_html(fig3)
+    })

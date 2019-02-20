@@ -1,7 +1,8 @@
-from config.settings.production import STATIC_VERSION
+from os import environ
+from importlib import import_module
 
 
 def version(_):
     """ Context processor for setting staticfiles version """
 
-    return {'version': STATIC_VERSION}
+    return {'version': import_module(environ['DJANGO_SETTINGS_MODULE']).STATIC_VERSION}

@@ -1,4 +1,4 @@
-from config.settings.local import BASE_NAME
+from config.settings.production import BASE_NAME
 from celery import Celery
 from kombu import Queue
 from os import environ
