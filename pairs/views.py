@@ -80,20 +80,13 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
     owner, form = None, None
 
     if not for_search:
-        orders = Order.objects.order_by('all_set', '-purchase_date')
-
         if not request.user.is_moderator:
-            filtered_orders = Order.objects.none()
             owner = request.user.username
-
-            for order in orders:
-                if owner in order.get_owners_names():
-                    filtered_orders |= Order.objects.filter(pk=order.id)
-
-            orders = filtered_orders.order_by('all_set', '-purchase_date')
+            orders = Order.objects.user_orders(request.user.username).order_by('all_set', '-purchase_date')
             empty_orders_message = 'Not found the orders, which include your added pairs.'
 
         else:
+            orders = Order.objects.order_by('all_set', '-purchase_date')
             empty_orders_message = 'There are no orders in the database.'
 
         # set get parameter 'period' to 0 by default

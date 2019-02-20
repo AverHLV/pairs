@@ -67,6 +67,16 @@ class Pair(TimeStamped):
         self.quantity = quantity
 
 
+class OrdersManager(models.Manager):
+    @staticmethod
+    def user_orders(username):
+        """ Return orders where the user owns the item """
+
+        orders = Order.objects.all()
+        unnecessary_orders_ids = [order.id for order in orders if username not in order.get_owners_names()]
+        return orders.exclude(id__in=unnecessary_orders_ids)
+
+
 class Order(TimeStamped):
     """ Amazon order model """
 
@@ -82,7 +92,7 @@ class Order(TimeStamped):
     shipping_info = JSONField(null=True, blank=True)
     all_set = models.BooleanField(default=False)
     returned = models.BooleanField(default=False)
-    objects = models.Manager()
+    objects = OrdersManager()
 
     class Meta:
         db_table = 'orders'
