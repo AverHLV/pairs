@@ -165,9 +165,13 @@
     {% if orders and not search %}
         <div class="paginator">
             {% if orders.has_previous %}
-                <a href="/orders/page/{{ orders.previous_page_number }}/">&laquo;</a>
+                {% if orders.previous_page_number != 1 %}
+                    <a href="/orders/page/1/">&laquo;</a>
+                {% endif %}
+
+                <a href="/orders/page/{{ orders.previous_page_number }}/">&lt;</a>
             {% else %}
-                &laquo;
+                &lt;
             {% endif %}
 
             {% for page in orders.paginator.page_range %}
@@ -181,9 +185,13 @@
             {% endfor %}
 
             {% if orders.has_next %}
-                <a href="/orders/page/{{ orders.next_page_number }}/">&raquo;</a>
+                <a href="/orders/page/{{ orders.next_page_number }}/">&gt;</a>
+
+                {% if orders.next_page_number != orders.paginator.num_pages %}
+                    <a href="/orders/page/{{ orders.paginator.num_pages }}/">&raquo;</a>
+                {% endif %}
             {% else %}
-                &raquo;
+                &gt;
             {% endif %}
         </div>
     {% endif %}

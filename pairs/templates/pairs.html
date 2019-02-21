@@ -139,9 +139,13 @@
         {% if pairs and not search %}
             <div class="paginator">
                 {% if pairs.has_previous %}
-                    <a href="/page/{{ pairs.previous_page_number }}/">&laquo;</a>
+                    {% if pairs.previous_page_number != 1 %}
+                        <a href="/page/1/">&laquo;</a>
+                    {% endif %}
+
+                    <a href="/page/{{ pairs.previous_page_number }}/">&lt;</a>
                 {% else %}
-                    &laquo;
+                    &lt;
                 {% endif %}
 
                 {% for page in pairs.paginator.page_range %}
@@ -155,9 +159,13 @@
                 {% endfor %}
 
                 {% if pairs.has_next %}
-                    <a href="/page/{{ pairs.next_page_number }}/">&raquo;</a>
+                    <a href="/page/{{ pairs.next_page_number }}/">&gt;</a>
+
+                    {% if pairs.next_page_number != pairs.paginator.num_pages %}
+                        <a href="/page/{{ pairs.paginator.num_pages }}/">&raquo;</a>
+                    {% endif %}
                 {% else %}
-                    &raquo;
+                    &gt;
                 {% endif %}
             </div>
         {% endif %}
