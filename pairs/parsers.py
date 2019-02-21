@@ -52,20 +52,28 @@ def get_price_from_response(response):
                 except (KeyError, ValueError):
                     return 0
 
-            return price
+            if response.parsed['Summary']['LowestPrices']['LowestPrice']['condition']['value'] == 'new':
+                return price
+
+            return 0
 
         else:
             try:
                 prices = [float(price['LandedPrice']['Amount']['value'])
-                          for price in response.parsed['Summary']['LowestPrices']['LowestPrice']]
+                          for price in response.parsed['Summary']['LowestPrices']['LowestPrice']
+                          if price['condition']['value'] == 'new']
 
             except (KeyError, ValueError):
                 try:
                     prices = [float(price['ListingPrice']['Amount']['value'])
-                              for price in response.parsed['Summary']['LowestPrices']['LowestPrice']]
+                              for price in response.parsed['Summary']['LowestPrices']['LowestPrice']
+                              if price['condition']['value'] == 'new']
 
                 except (KeyError, ValueError):
                     return 0
+
+            if not len(prices):
+                return 0
 
             return min(prices)
 
@@ -88,20 +96,28 @@ def get_price_from_response(response):
                 except (KeyError, ValueError):
                     return 0
 
-            return price
+            if response.parsed['Summary']['BuyBoxPrices']['BuyBoxPrice']['condition']['value'] == 'New':
+                return price
+
+            return 0
 
         else:
             try:
                 prices = [float(price['LandedPrice']['Amount']['value'])
-                          for price in response.parsed['Summary']['BuyBoxPrices']['BuyBoxPrice']]
+                          for price in response.parsed['Summary']['BuyBoxPrices']['BuyBoxPrice']
+                          if price['condition']['value'] == 'New']
 
             except (KeyError, ValueError):
                 try:
                     prices = [float(price['ListingPrice']['Amount']['value'])
-                              for price in response.parsed['Summary']['BuyBoxPrices']['BuyBoxPrice']]
+                              for price in response.parsed['Summary']['BuyBoxPrices']['BuyBoxPrice']
+                              if price['condition']['value'] == 'New']
 
                 except (KeyError, ValueError):
                     return 0
+
+            if not len(prices):
+                return 0
 
             return min(prices)
 

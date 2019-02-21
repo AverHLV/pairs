@@ -298,6 +298,7 @@ class PairForm(forms.ModelForm):
                     }, code='eb15')
 
                 # item delivery time
+
                 delivery_time = get_delivery_time(ebay_id)
 
                 if delivery_time is None:
