@@ -20,7 +20,7 @@ order_id_length = 19
 
 # pairs views
 on_page_obj_number = 20
-page_range = 5
+page_range = 3
 pair_minimum = 30
 
 failure_reasons = {

@@ -4,6 +4,11 @@ register = template.Library()
 
 
 @register.filter
+def subtract(arg1, arg2):
+    return int(arg1) - int(arg2)
+
+
+@register.filter
 def addstr(arg1, arg2):
     return str(arg1) + str(arg2)
 

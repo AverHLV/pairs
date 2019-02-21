@@ -145,7 +145,7 @@
                 {% endif %}
 
                 {% for page in pairs.paginator.page_range %}
-                    {% if page < page_range %}
+                    {% if page < current_page|add:page_range and page > current_page|subtract:page_range %}
                         {% if page == current_page %}
                             {{ page }}
                         {% else %}
