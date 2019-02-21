@@ -117,22 +117,20 @@ class PairForm(forms.ModelForm):
 
         # validation based on api response
 
-        """
+        '''
         amazon_products_api.check_calls(True, forms.ValidationError,
-                                        '''Amazon api calls number is over.
-                                        Please, try to add pair after {0} o’clock.
-                                        '''.format(amazon_products_api.checker.start_time), code='am3')
-        """
+                                        'Amazon api calls number is over.Please try to add pair after {0} o’clock.'
+                                        .format(amazon_products_api.checker.start_time), code='am3')
+        '''
 
         try:
             response = amazon_products_api.api.get_matching_product_for_id(amazon_products_api.region, 'ASIN', [asin])
 
-            """
+            '''
             amazon_products_api.check_calls(True, forms.ValidationError,
-                                            '''Amazon api calls number is over.
-                                            Please, try to add pair after {0} o’clock.
-                                            '''.format(amazon_products_api.checker.start_time), code='am3')
-            """
+                                            'Amazon api calls number is over. Please try to add pair after {0} o’clock.'
+                                            .format(amazon_products_api.checker.start_time), code='am3')
+            '''
 
             response_my_product = amazon_products_api.api.get_my_price_for_asin(amazon_products_api.region, [asin])
             response_price = amazon_products_api.api.get_lowest_priced_offers_for_asin(amazon_products_api.region, asin)
@@ -227,25 +225,27 @@ class PairForm(forms.ModelForm):
             raise forms.ValidationError({'ebay_ids': 'Your input string contains duplicate ids.'}, code='eb4')
 
         if len(ebay_ids_split) > constants.ebay_ids_max_count:
-            raise forms.ValidationError({'ebay_ids': '''Your input string contains 
-                                        more than {0} ids.'''.format(constants.ebay_ids_max_count)}, code='eb5')
+            raise forms.ValidationError({
+                'ebay_ids': 'Your input string contains more than {0} ids.'.format(constants.ebay_ids_max_count)
+            }, code='eb5')
 
         for ebay_id in ebay_ids_split:
             if len(ebay_id) != constants.ebay_id_length:
-                raise forms.ValidationError({'ebay_ids': '''One of your ids has wrong length. 
-                                            eBay id length should be {0}.'''.format(constants.ebay_id_length)},
-                                            code='eb6')
+                raise forms.ValidationError({
+                    'ebay_ids': 'One of your ids has wrong length. eBay id length should be {0}.'
+                    .format(constants.ebay_id_length)
+                }, code='eb6')
 
             if Pair.objects.filter(ebay_ids__contains=ebay_id).exists():
                 raise forms.ValidationError({'ebay_ids': 'This id ({0}) already exists.'.format(ebay_id)}, code='eb7')
 
             # validation based on api response
 
-            """
+            '''
             ebay_trading_api.check_calls(True, forms.ValidationError,
-                                         '''eBay api calls number is over. Please, try to add pair tomorrow in {0}.
-                                         '''.format(ebay_trading_api.checker.start_time), code='eb8')
-            """
+                                         'eBay api calls number is over. Please try to add pair tomorrow in {0}.'
+                                         .format(ebay_trading_api.checker.start_time), code='eb8')
+            '''
 
             try:
                 response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
@@ -261,48 +261,54 @@ class PairForm(forms.ModelForm):
 
                 else:
                     logger.warning(e.response.dict()['Errors'])
-                    raise forms.ValidationError({'ebay_ids': 'eBay api unhandled error: {0}.'
-                                                .format(e.response.dict()['Errors'])}, code='eb10')
+
+                    raise forms.ValidationError({
+                        'ebay_ids': 'eBay api unhandled error: {0}.'.format(e.response.dict()['Errors'])
+                    }, code='eb10')
 
             else:
                 # listing status checking
 
                 if response.reply.Item.SellingStatus.ListingStatus != 'Active':
-                    raise forms.ValidationError({'ebay_ids': "Listing status for this item ({0}) is not 'Active'."
-                                                .format(ebay_id)}, code='eb11')
+                    raise forms.ValidationError({
+                        'ebay_ids': "Listing status for this item ({0}) is not 'Active'.".format(ebay_id)
+                    }, code='eb11')
 
                 if response.reply.Item.ReturnPolicy.ReturnsAcceptedOption == 'ReturnsNotAccepted':
-                    raise forms.ValidationError({'ebay_ids': 'Seller does not accept return for this item ({0}).'
-                                                .format(ebay_id)}, code='eb12')
+                    raise forms.ValidationError({
+                        'ebay_ids': 'Seller does not accept return for this item ({0}).'.format(ebay_id)
+                    }, code='eb12')
 
                 # checking seller statistics
 
                 feedback_score = int(response.reply.Item.Seller.FeedbackScore)
 
                 if feedback_score <= constants.ebay_min_feedback_score:
-                    raise forms.ValidationError({'ebay_ids': '''Feedback score for this item ({0})
-                                                             lower or equal than {1}.'''
-                                                .format(ebay_id, constants.ebay_min_feedback_score)}, code='eb16')
+                    raise forms.ValidationError({
+                        'ebay_ids': 'Feedback score for this item ({0}) lower or equal than {1}.'
+                        .format(ebay_id, constants.ebay_min_feedback_score)
+                    }, code='eb16')
 
                 positive_feedback = float(response.reply.Item.Seller.PositiveFeedbackPercent)
 
                 if positive_feedback <= constants.ebay_min_positive_percentage:
-                    raise forms.ValidationError({'ebay_ids': '''Positive feedback percentage for this item ({0})
-                                                             lower or equal than {1}%.'''
-                                                .format(ebay_id, constants.ebay_min_positive_percentage)}, code='eb15')
+                    raise forms.ValidationError({
+                        'ebay_ids': 'Positive feedback percentage for this item ({0}) lower or equal than {1}%.'
+                        .format(ebay_id, constants.ebay_min_positive_percentage)
+                    }, code='eb15')
 
                 # item delivery time
                 delivery_time = get_delivery_time(ebay_id)
 
                 if delivery_time is None:
-                    raise forms.ValidationError({'ebay_ids': '''Getting delivery time failed. Please try later.
-                                                             Maybe this item does not ship to server region.'''},
+                    raise forms.ValidationError({'ebay_ids': 'Getting delivery time failed. Please try later.'},
                                                 code='eb14')
 
                 if delivery_time > constants.ebay_max_delivery_time:
-                    raise forms.ValidationError({'ebay_ids': '''Delivery time for this item ({0})
-                                                is greater than {1} days.'''
-                                                .format(ebay_id, constants.ebay_max_delivery_time)}, code='eb13')
+                    raise forms.ValidationError({
+                        'ebay_ids': 'Delivery time for this item ({0}) is greater than {1} days.'
+                        .format(ebay_id, constants.ebay_max_delivery_time)
+                    }, code='eb13')
 
                 # getting eBay price
 
@@ -313,8 +319,9 @@ class PairForm(forms.ModelForm):
         ebay_price_set = set(self.ebay_price)
 
         if len(ebay_price_set) == 1 and not list(ebay_price_set)[0]:
-            raise forms.ValidationError({'ebay_ids': '''Checking eBay prices failed. All ids in request have
-                                                     a zero price.'''}, code='eb17')
+            raise forms.ValidationError({
+                'ebay_ids': 'Checking eBay prices failed. All ids in request have a zero price.'
+            }, code='eb17')
 
         if len(old_ebay_ids_to_add):
             ebay_ids += ';' + ';'.join(old_ebay_ids_to_add)
