@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'django_celery_beat',
+    'celerybeat_status',
     'pairs',
     'stats',
     'users'

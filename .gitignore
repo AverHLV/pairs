@@ -10,3 +10,4 @@ run_shell.py
 chromedriver
 chromedriver.exe
 buyer_secret.json
+celerybeat-schedule.???
