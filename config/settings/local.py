@@ -148,9 +148,13 @@ USE_L10N = True
 USE_TZ = True
 
 # Celery settings
-broker_url = secret_dict['broker_url']
+
 timezone = TIME_ZONE
 task_ignore_result = True
+broker_url = secret_dict['broker_url']
+
+if not len(broker_url):
+    broker_url = None
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

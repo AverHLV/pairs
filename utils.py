@@ -16,10 +16,9 @@ def get_secret(filename):
     """ Get the secret from json file or raise exception """
 
     fields = (
-        'secret_key', 'db_admin', 'db_pass', 'db_name', 'db_host', 'db_port', 'broker_url', 'broker_api_url',
-        'flower_auth', 'em_user', 'em_pass', 'em_server', 'em_port', 'eb_app_id', 'eb_dev_id', 'eb_cert_id',
-        'eb_ru_name', 'eb_user_token', 'eb_token_exp_date', 'am_seller_id', 'am_access_key', 'am_secret_key',
-        'am_auth_token', 'hosts', 'admins'
+        'secret_key', 'db_admin', 'db_pass', 'db_name', 'db_host', 'db_port', 'broker_url', 'em_user', 'em_pass',
+        'em_server', 'em_port', 'eb_app_id', 'eb_dev_id', 'eb_cert_id', 'eb_ru_name', 'eb_user_token',
+        'eb_token_exp_date', 'am_seller_id', 'am_access_key', 'am_secret_key', 'am_auth_token', 'hosts', 'admins'
     )
 
     try:
