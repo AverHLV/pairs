@@ -1,11 +1,8 @@
 migrations
 *.json
 *.log
-celerybeat-schedule.???
+run_*.py
 start.bat
-run_broker.py
-run_server.py
-run_worker.py
-run_shell.py
+celerybeat-schedule.???
 chromedriver
 chromedriver.exe
