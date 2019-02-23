@@ -1,7 +1,7 @@
 migrations
-secret.json
-secret_prod.json
-main.log
+*.json
+*.log
+celerybeat-schedule.???
 start.bat
 run_broker.py
 run_server.py
@@ -9,5 +9,3 @@ run_worker.py
 run_shell.py
 chromedriver
 chromedriver.exe
-buyer_secret.json
-celerybeat-schedule.???
