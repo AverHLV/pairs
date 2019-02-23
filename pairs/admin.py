@@ -14,9 +14,24 @@ def make_pairs_checked_false(_, __, queryset):
     queryset.update(checked=2)
 
 
+def set_status_3(_, __, queryset):
+    queryset.update(checked=3)
+
+
+def set_status_4(_, __, queryset):
+    queryset.update(checked=4)
+
+
+def set_status_6(_, __, queryset):
+    queryset.update(checked=6)
+
+
 make_pairs_unchecked.short_description = 'Mark selected pairs as unchecked (status 0)'
 make_pairs_checked.short_description = 'Mark selected pairs as checked (status 1)'
-make_pairs_checked_false.short_description = 'Mark selected pairs as checked (status 2)'
+make_pairs_checked_false.short_description = 'Mark selected pairs as unsuitable (2 - Different items)'
+set_status_3.short_description = 'Mark selected pairs as unsuitable (3 - Different package contain)'
+set_status_4.short_description = 'Mark selected pairs as unsuitable (4 - Cannot be added to the store)'
+set_status_6.short_description = 'Mark selected pairs as unsuitable (6 - Closed by owner)'
 
 
 class PairInline(admin.TabularInline):
@@ -28,7 +43,10 @@ class PairAdmin(admin.ModelAdmin):
     readonly_fields = 'created',
     search_fields = 'asin',
     ordering = 'checked', '-created'
-    actions = make_pairs_unchecked, make_pairs_checked, make_pairs_checked_false
+
+    actions = (
+        make_pairs_unchecked, make_pairs_checked, make_pairs_checked_false, set_status_3, set_status_4, set_status_6
+    )
 
 
 @admin.register(Order)
