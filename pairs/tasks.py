@@ -151,12 +151,12 @@ def upload_new_pairs():
         xml_product_helper.reload_tree()
         raise ValueError('Unhandled Amazon Feeds api error: {0}.'.format(e))
 
+    xml_product_helper.reload_tree()
+
     if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
-        xml_product_helper.reload_tree()
         raise ValueError('Feeds Api did not accept messages to upload products. Status: {0}. Messages: {1}.'
                          .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
-    xml_product_helper.reload_tree()
     logger.info('Products upload complete.')
 
     # asins for checking results
@@ -203,12 +203,12 @@ def update_pairs_quantity():
         xml_quantity_helper.reload_tree()
         raise ValueError('Unhandled Amazon Feeds api error: {0}.'.format(e))
 
+    xml_quantity_helper.reload_tree()
+
     if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
-        xml_quantity_helper.reload_tree()
         raise ValueError('Feeds Api did not accept messages to update quantities. Status: {0}. Messages: {1}.'
                          .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
-    xml_quantity_helper.reload_tree()
     logger.info('Pairs quantity update complete.')
 
 
@@ -260,12 +260,12 @@ def set_prices(asins_prices):
         xml_price_helper.reload_tree()
         raise ValueError('Unhandled Amazon Feeds api error: {0}.'.format(e))
 
+    xml_price_helper.reload_tree()
+
     if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
-        xml_price_helper.reload_tree()
         raise ValueError('Feeds Api did not accept messages to set prices. Status: {0}. Messages: {1}.'
                          .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
 
-    xml_price_helper.reload_tree()
     logger.info('Prices are set')
 
 
@@ -510,13 +510,13 @@ def delete_pairs_unsuitable():
         logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e))
         return
 
+    xml_delete_product_helper.reload_tree()
+
     if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
-        xml_delete_product_helper.reload_tree()
         logger.critical('Feeds Api did not accept messages to delete products. Status: {0}. Messages: {1}.'
                         .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
         return
 
-    xml_delete_product_helper.reload_tree()
     logger.info('Old pairs deleted from Amazon')
 
 
