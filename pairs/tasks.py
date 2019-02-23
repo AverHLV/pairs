@@ -9,9 +9,9 @@ from config import constants
 from .parsers import get_price_from_response, get_ebay_price_from_response
 from .models import Pair, Order, shipping_info_fields
 from utils import (
-    ebay_trading_api,                                          # eBay apis
-    amazon_products_api, amazon_orders_api, amazon_feeds_api,  # Amazon apis
-    xml_quantity_helper, xml_product_helper, xml_price_helper  # xml helpers
+    ebay_trading_api,                                                                     # eBay apis
+    amazon_products_api, amazon_orders_api, amazon_feeds_api,                             # Amazon apis
+    xml_quantity_helper, xml_product_helper, xml_price_helper, xml_delete_product_helper  # xml helpers
 )
 
 logger = get_task_logger(__name__)
@@ -478,14 +478,46 @@ def amazon_update(delay=constants.amazon_workflow_delay, get_price_delay=constan
 
 @shared_task(name='Delete old unsuitable pairs')
 def delete_pairs_unsuitable():
-    """ Delete old pairs with unsuitable status """
+    """ Delete old pairs with unsuitable status from db and then from Amazon inventory """
+
+    messages = []
 
     for pair in Pair.objects.filter(created__lte=datetime.now(get_current_timezone()) - timedelta(
-            days=constants.pair_unsuitable_days_live)).filter(checked__gte=2):
+           days=constants.pair_unsuitable_days_live)).filter(checked__gte=2):
+        if len(pair.seller_sku):
+            messages.append((pair.seller_sku,))
+
         if not Order.objects.filter(items=pair).exists():
             pair.delete()
 
-    logger.info('Old pairs with unsuitable status deleted')
+    logger.info('Old pairs with unsuitable status deleted from db')
+
+    if len(messages):
+        xml_delete_product_helper.make_body(messages)
+    else:
+        logger.warning('No messages to delete products in Amazon.')
+        return
+
+    # delete filtered products from Amazon
+
+    try:
+        response = amazon_feeds_api.api.submit_feed(feed=xml_delete_product_helper.tree,
+                                                    feed_type=amazon_feeds_api.feed_types['delete_product'],
+                                                    marketplaceids=[amazon_feeds_api.region])
+
+    except amazon_feeds_api.connection_error as e:
+        xml_delete_product_helper.reload_tree()
+        logger.critical('Unhandled Amazon Feeds api error: {0}.'.format(e))
+        return
+
+    if response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'] != '_SUBMITTED_':
+        xml_delete_product_helper.reload_tree()
+        logger.critical('Feeds Api did not accept messages to delete products. Status: {0}. Messages: {1}.'
+                        .format(response.parsed['FeedSubmissionInfo']['FeedProcessingStatus']['value'], messages))
+        return
+
+    xml_delete_product_helper.reload_tree()
+    logger.info('Old pairs deleted from Amazon')
 
 
 @shared_task(name='Check new orders')

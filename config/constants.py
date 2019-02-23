@@ -8,6 +8,7 @@ xml_header_filename = base_dir.child('templates_xml').child('header.xml')
 xml_message_quantity_filename = base_dir.child('templates_xml').child('message_quantity.xml')
 xml_message_product_filename = base_dir.child('templates_xml').child('message_product.xml')
 xml_message_price_filename = base_dir.child('templates_xml').child('message_price.xml')
+xml_message_delete_product_filename = base_dir.child('templates_xml').child('message_delete_product.xml')
 
 # pairs models
 asin_length = 10
@@ -95,12 +96,14 @@ amazon_region = 'US'
 amazon_feed_types = {
     'quantity': '_POST_INVENTORY_AVAILABILITY_DATA_',
     'product': '_POST_PRODUCT_DATA_',
+    'delete_product': '_POST_PRODUCT_DATA_',
     'price': '_POST_PRODUCT_PRICING_DATA_'
 }
 
 amazon_message_types = {
     'quantity': 'Inventory',
     'product': 'Product',
+    'delete_product': 'Product',
     'price': 'Price'
 }
 

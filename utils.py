@@ -238,7 +238,10 @@ class XmlHelper(object):
         self.__root = self.__tree.getroot()
         self.__message = ElementTree.parse(self.__path[1]).getroot()
 
-    def add_message(self, sku, param):
+    def add_message(self, sku, param=None):
+        if param is None and self.__message_type != 'delete_product':
+            raise ValueError('Second argument should be not None')
+
         message = deepcopy(self.__message)
         message.find('.//MessageID').text = str(self.__message_number)
         message.find('.//SKU').text = sku
@@ -288,3 +291,5 @@ xml_product_helper = XmlHelper((constants.xml_header_filename, constants.xml_mes
                                secret_dict['am_seller_id'], message_type='product')
 xml_price_helper = XmlHelper((constants.xml_header_filename, constants.xml_message_price_filename),
                              secret_dict['am_seller_id'], message_type='price')
+xml_delete_product_helper = XmlHelper((constants.xml_header_filename, constants.xml_message_delete_product_filename),
+                                      secret_dict['am_seller_id'], message_type='delete_product')
