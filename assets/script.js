@@ -148,6 +148,16 @@ function modal_price(id, amazon_price) {
     });
 }
 
+function order_purchase_details(message) {
+    // display rendered page in custom dialog
+
+    bootbox.dialog({
+        message: message[0],
+        onEscape: true,
+        title: "Order purchasing details"
+    });
+}
+
 function set_loader() {
     // load screen setter
 

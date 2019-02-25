@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.template.context_processors import csrf
 from django.utils.timezone import get_current_timezone
 from django.core.exceptions import PermissionDenied
+from django.template.loader import render_to_string
 from config import constants
 from decorators import moderator_required, is_ajax
 from datetime import datetime, timedelta
@@ -115,12 +116,18 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
         orders = search_order
         empty_orders_message = 'The search has not given any results.'
 
+    # render purchase details pages
+
+    purchase_details = {order.id: [render_to_string('buying_details.html', {'order': order})]
+                        for order in orders.filter(buying_status=True)}
+
     profits = [order.calculate_profits(owner) for order in orders]
     orders = Paginator(orders, constants.on_page_obj_number).page(page_number)
     
     return render(request, 'orders.html', {
         'orders': orders,
         'profits': profits,
+        'purchase_details': purchase_details,
         'page_range': constants.page_range,
         'current_page': page_number,
         'empty': empty_orders_message,

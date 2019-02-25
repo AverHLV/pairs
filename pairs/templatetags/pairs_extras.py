@@ -36,6 +36,11 @@ def sort_json(dictionary=None):
         return sorted(dictionary.items(), key=lambda x: x[0])
 
 
+@register.filter
+def split(string, _=None):
+    return string.split(';')
+
+
 @register.simple_tag
 def define(value=None):
     return value

@@ -1,0 +1,32 @@
+{% load pairs_extras %}
+<table>
+    <tr>
+        <th>Item</th>
+        <th>eBay id</th>
+    </tr>
+
+    {% for item in order.items.all %}
+        <tr>
+            <td>{{ item.asin }}</td>
+
+            <td>
+                {% define item.id|stringformat:'i' as item_id %}
+                {% define order.items_buying_status|get_item:item_id as item_dict %}
+
+                {% if not item_dict|length %}
+                    &#10008;
+                {% else %}
+                    {% for ebay_id in item.ebay_ids|split %}
+                        {% define item_dict|get_item:ebay_id as ebay_id_status %}
+
+                        {% if ebay_id_status %}
+                            {{ ebay_id }}: &#10004;
+                        {% else %}
+                            {{ ebay_id }}: &#10008;
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
