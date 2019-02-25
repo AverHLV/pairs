@@ -1,4 +1,5 @@
 from unipath import Path
+from os import name as os_name
 from math import inf
 
 # file paths
@@ -10,6 +11,11 @@ xml_message_product_filename = base_dir.child('templates_xml').child('message_pr
 xml_message_price_filename = base_dir.child('templates_xml').child('message_price.xml')
 xml_message_delete_product_filename = base_dir.child('templates_xml').child('message_delete_product.xml')
 
+if os_name == 'nt':
+    chromedriver_path = base_dir.child('selenium_buyer').child('chromedriver.exe')
+else:
+    chromedriver_path = 'chromedriver'
+
 # pairs models
 asin_length = 10
 sku_length = 12
@@ -20,7 +26,7 @@ owner_on_delete_id = 1
 order_id_length = 19
 
 # pairs views
-on_page_obj_number = 20
+on_page_obj_number = 40
 page_range = 3
 pair_minimum = 30
 
@@ -58,6 +64,60 @@ amazon_approximate_price_percent = {
 pair_unsuitable_days_live = 7
 amazon_workflow_delay = 180  # seconds
 check_after_delay = 3600  # seconds
+
+us_states_abbr = {
+    'AK': 'Alaska',
+    'AL': 'Alabama',
+    'AR': 'Arkansas',
+    'AZ': 'Arizona',
+    'CA': 'California',
+    'CO': 'Colorado',
+    'CT': 'Connecticut',
+    'DE': 'Delaware',
+    'FL': 'Florida',
+    'GA': 'Georgia',
+    'HI': 'Hawaii',
+    'IA': 'Iowa',
+    'ID': 'Idaho',
+    'IL': 'Illinois',
+    'IN': 'Indiana',
+    'KS': 'Kansas',
+    'KY': 'Kentucky',
+    'LA': 'Louisiana',
+    'MA': 'Massachusetts',
+    'MD': 'Maryland',
+    'ME': 'Maine',
+    'MI': 'Michigan',
+    'MN': 'Minnesota',
+    'MO': 'Missouri',
+    'MS': 'Mississippi',
+    'MT': 'Montana',
+    'NC': 'North Carolina',
+    'ND': 'North Dakota',
+    'NE': 'Nebraska',
+    'NH': 'New Hampshire',
+    'NJ': 'New Jersey',
+    'NM': 'New Mexico',
+    'NV': 'Nevada',
+    'NY': 'New York',
+    'OH': 'Ohio',
+    'OK': 'Oklahoma',
+    'OR': 'Oregon',
+    'PA': 'Pennsylvania',
+    'RI': 'Rhode Island',
+    'SC': 'South Carolina',
+    'SD': 'South Dakota',
+    'TN': 'Tennessee',
+    'TX': 'Texas',
+    'UT': 'Utah',
+    'VA': 'Virginia',
+    'VT': 'Vermont',
+    'WA': 'Washington',
+    'WI': 'Wisconsin',
+    'WV': 'West Virginia',
+    'WY': 'Wyoming',
+    'DC': 'District Of Columbia'
+}
 
 # pairs parsers
 

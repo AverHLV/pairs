@@ -252,7 +252,7 @@ class PairForm(forms.ModelForm):
 
             except ConnectionError:
                 raise forms.ValidationError({
-                    'Remote end closed connection without response from eBay. Please try again.'
+                    'ebay_ids': 'Remote end closed connection without response from eBay. Please try again.'
                 }, code='eb17')
 
             except ebay_trading_api.connection_error as e:

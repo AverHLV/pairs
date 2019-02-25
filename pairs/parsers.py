@@ -122,6 +122,67 @@ def get_price_from_response(response):
             return min(prices)
 
 
+def get_my_price_from_response(response):
+    """ Get item price from GetMyPriceForASIN response """
+
+    try:
+        response.parsed[0]
+
+    except KeyError:
+        # if not iterable
+
+        try:
+            raw_price = response.parsed['Product']['Offers']['Offer']['BuyingPrice']['LandedPrice']['Amount']['value']
+            price = float(raw_price)
+
+        except (KeyError, ValueError):
+            try:
+                raw_price = response.parsed['Product']['Offers']['Offer']['BuyingPrice']['ListingPrice']['Amount'][
+                    'value']
+                price = float(raw_price)
+
+            except (KeyError, ValueError):
+                return [0]
+
+        return [price]
+
+    else:
+        # if iterable
+
+        try:
+            return [float(product['Product']['Offers']['Offer']['BuyingPrice']['LandedPrice']['Amount']['value'])
+                    for product in response.parsed]
+
+        except (KeyError, ValueError):
+            try:
+                return [float(product['Product']['Offers']['Offer']['BuyingPrice']['ListingPrice']['Amount']['value'])
+                        for product in response.parsed]
+
+            except (KeyError, ValueError):
+                return [0]
+
+
+def get_amazon_upc(asin):
+    """ Get item UPC from Amazon item page """
+
+    location = '//li[child::b[contains(text(), "UPC:")]]/text()'
+
+    try:
+        response = urlopen('https://www.amazon.com/dp/{0}/'.format(asin)).read().decode('utf8')
+
+    except URLError as e:
+        logger.warning('URLError while getting upc: {0}'.format(e))
+        return
+
+    tree = fromstring(response, HTMLParser())
+    upc = tree.xpath(location)
+
+    if not len(upc):
+        return
+
+    return [upc_id for upc_id in upc[0].split(' ') if len(upc_id)]
+
+
 def get_ebay_price_from_response(response):
     """ Get eBay item price and shipping cost from GetItem response """
 
@@ -159,6 +220,15 @@ def get_ebay_price_from_response(response):
             return price
 
     return price + lowest_shipping_cost
+
+
+def get_ebay_quantity_from_response(response):
+    """ Get eBay item quantity from GetItem response """
+
+    if response.reply.Item.SellingStatus.ListingStatus == 'Active':
+        return int(response.reply.Item.Quantity) - int(response.reply.Item.SellingStatus.QuantitySold)
+
+    return 0
 
 
 def get_delivery_time(ebay_id):

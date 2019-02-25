@@ -4,6 +4,7 @@ from requests.adapters import ConnectionError
 from users.models import CustomUser
 from config import constants
 from utils import ebay_trading_api, logger
+from .parsers import get_ebay_quantity_from_response
 
 
 shipping_info_fields = (
@@ -62,12 +63,7 @@ class Pair(TimeStamped):
                     logger.critical('Remote end closed connection without response from eBay.')
                     return
 
-                if response.reply.Item.SellingStatus.ListingStatus == 'Active':
-                    id_q = int(response.reply.Item.Quantity) - int(response.reply.Item.SellingStatus.QuantitySold)
-                else:
-                    id_q = 0
-
-                quantity += id_q
+                quantity += get_ebay_quantity_from_response(response)
 
         self.quantity = quantity
 
@@ -97,6 +93,8 @@ class Order(TimeStamped):
     shipping_info = JSONField(null=True, blank=True)
     all_set = models.BooleanField(default=False)
     returned = models.BooleanField(default=False)
+    buying_status = models.BooleanField(default=False)
+    items_buying_status = JSONField(null=True, blank=True)
     objects = OrdersManager()
 
     class Meta:

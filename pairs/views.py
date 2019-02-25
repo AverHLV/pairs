@@ -180,7 +180,8 @@ def update_ebay_price(_, order_id, result, __=None):
     order.ebay_price = result
     order.total_profit = round(order.amazon_price * constants.profit_percentage - result, 2)
     order.all_set = True
-    order.save(update_fields=['ebay_price', 'total_profit', 'all_set'])
+    order.buying_status = True
+    order.save(update_fields=['ebay_price', 'total_profit', 'all_set', 'buying_status'])
 
     owner = order.get_first_owner()
     profit = owner.get_profit(order.total_profit)
@@ -337,7 +338,8 @@ def order_profits(request, order_id):
 
             order.set_profits(profits, commit=False)
             order.all_set = True
-            order.save(update_fields=['ebay_price', 'total_profit', 'owners_profits', 'all_set'])
+            order.buying_status = True
+            order.save(update_fields=['ebay_price', 'total_profit', 'owners_profits', 'all_set', 'buying_status'])
 
             return redirect('/orders/')
 
