@@ -4,9 +4,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from os import name as os_name
 from time import sleep
 from re import sub
-from config.constants import chromedriver_path
 
 
 class SeleniumBuyer(object):
@@ -17,8 +17,14 @@ class SeleniumBuyer(object):
     item_page_url = 'https://www.ebay.com/itm/{0}'
     seller_message = 'Dear seller, please put no price tags or ads at the package. I will be grateful!'
 
-    def __init__(self, credentials, payment_cred, cashback_cred=None, driver_path=chromedriver_path,
+    def __init__(self, credentials, payment_cred, cashback_cred=None, driver_path=None,
                  wait_page_load_delay=10, wait_frequency=2, headless=True, login_to_cb=False):
+        if driver_path is None:
+            if os_name == 'nt':
+                driver_path = 'chromedriver.exe'
+            else:
+                driver_path = 'chromedriver'
+
         options = Options()
 
         if headless:
