@@ -1,4 +1,5 @@
 from unipath import Path
+from os import name as os_name
 from math import inf
 
 # file paths
@@ -9,6 +10,16 @@ xml_message_quantity_filename = base_dir.child('templates_xml').child('message_q
 xml_message_product_filename = base_dir.child('templates_xml').child('message_product.xml')
 xml_message_price_filename = base_dir.child('templates_xml').child('message_price.xml')
 xml_message_delete_product_filename = base_dir.child('templates_xml').child('message_delete_product.xml')
+
+# logs paths
+
+if os_name == 'nt':
+    default_log_path = base_dir.ancestor(1).child('logs').child('default_err.log')
+    workflow_log_path = base_dir.ancestor(1).child('logs').child('workflow_err.log')
+
+else:
+    default_log_path = base_dir.ancestor(1).child('logs').child('celery').child('default_err.log')
+    workflow_log_path = base_dir.ancestor(1).child('logs').child('celery').child('workflow_err.log')
 
 # pairs models
 asin_length = 10

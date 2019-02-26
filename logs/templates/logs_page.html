@@ -1,0 +1,25 @@
+<!doctype html>
+{% load static %}
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="{% static 'styles.css' %}?{{ version }}"/>
+
+        <script type="text/javascript">
+            window.onload = function() {
+                window.scrollTo(0, document.body.scrollHeight);
+            };
+        </script>
+    </head>
+
+    <body>
+        <div>
+            <table>
+                {% for row in log %}
+                    <tr style="text-align: left;">
+                        <td style="text-align: left;">{{ row|safe }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </body>
+</html>

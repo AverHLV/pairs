@@ -6,5 +6,5 @@ urlpatterns = [
     path('auth/', include('users.urls')),
     path('stats/', include('stats.urls')),
     path('admin/', admin.site.urls),
-    path('admin/statuscheck/', include('celerybeat_status.urls')),
+    path('admin/logs/', include('logs.urls'))
 ]
