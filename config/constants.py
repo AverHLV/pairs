@@ -18,8 +18,8 @@ if os_name == 'nt':
     workflow_log_path = base_dir.ancestor(1).child('logs').child('workflow_err.log')
 
 else:
-    default_log_path = base_dir.ancestor(1).child('logs').child('celery').child('default_err.log')
-    workflow_log_path = base_dir.ancestor(1).child('logs').child('celery').child('workflow_err.log')
+    default_log_path = '/home/aver/logs/celery/default_err.log'
+    workflow_log_path = '/home/aver/logs/celery/workflow_err.log'
 
 # pairs models
 asin_length = 10
