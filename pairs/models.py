@@ -23,7 +23,34 @@ class TimeStamped(models.Model):
 
 
 class Pair(TimeStamped):
-    """ Model for Amazon-eBay ids pair """
+    """
+    Model for Amazon-eBay ids pair
+
+    :field checked: pair check status, can be set by moderator, staff user
+        or automatically within amazon_workflow task
+
+        possible values:
+            0: yet not checked;
+            1: checked, all fine;
+            2: unsuitable, different items;
+            3: unsuitable, different package contain;
+            4: unsuitable, cannot be added to the Amazon inventory;
+            5: unsuitable, custom reason;
+            6: unsuitable, closed by pair owner.
+
+    :field owner: pair owner, provides by CustomUser model
+    :field asin: Amazon standard identification number
+    :field seller_sku: stock keeping unit, an identification code for a store or product
+    :field ebay_ids: string with an eBay identification numbers, delimited by ';'
+    :field quantity: sum of the available quantities of all items on eBay
+
+    :field amazon_approximate_price: price for a new product on Amazon, calculated by formulas:
+        max: price = ebay_price * ebay_price related interval coeff / profit percentage;
+        amazon_approximate_price = max price * max price between eBay items * max price between eBay items coeff
+
+    :field reason message: custom message with reason of unsuitable check
+
+    """
 
     checked = models.PositiveSmallIntegerField(default=0)
     owner = models.ForeignKey(CustomUser, on_delete=models.SET(constants.owner_on_delete_id))
@@ -79,7 +106,48 @@ class OrdersManager(models.Manager):
 
 
 class Order(TimeStamped):
-    """ Amazon order model """
+    """
+    Amazon order model
+
+    :field order_id: Amazon order unique identifier
+    :field purchase date: order purchase date
+    :field amazon_price: order total price on Amazon
+    :field ebay_price: order total price on eBay
+    :field total_profit: clean income from this order
+    :field items: order items, provides by Pair model
+    :field multi: is order contains one item or many
+
+    :field items_counts: dictionary with items counts from this order in format:
+        item.id: count
+
+    :field owners_profits: dictionary with owners profits in format:
+        owner.username: profit
+
+    :field shipping info: dictionary with order shipping info from Amazon customer
+        possible keys (according to mws response):
+            Name          - customer name (include first and last name);
+            AddressType   - indicates whether the address is commercial or residential,
+                            this element is used only in the US marketplace;
+            AddressLine1  - street address;
+            AddressLine2  - additional street address information, if required;
+            AddressLine3  - additional street address information, if required;
+            City          - city;
+            County        - county;
+            CountryCode   - country code;
+            District      - district;
+            PostalCode    - postal code;
+            Phone         - phone number;
+            StateOrRegion - state or region (can be like abbreviation or full name).
+
+    :field all_set: boolean, indicates is order purchased or not,
+        purchase information can be added manually by moderator or automatically by make_purchases task
+
+    :field returned: boolean, indicates is order was returned or not
+
+    :field items_buying_status: dictionary with automatic purchase results, format:
+        item.asin: False                    - if purchase task failed before buying on eBay;
+                   {ebay_id: True or False} - dictionary with item ebay_ids and their purchase results.
+    """
 
     order_id = models.CharField(max_length=constants.order_id_length)
     purchase_date = models.DateField()
@@ -93,7 +161,6 @@ class Order(TimeStamped):
     shipping_info = JSONField(null=True, blank=True)
     all_set = models.BooleanField(default=False)
     returned = models.BooleanField(default=False)
-    buying_status = models.BooleanField(default=False)
     items_buying_status = JSONField(null=True, blank=True)
     objects = OrdersManager()
 

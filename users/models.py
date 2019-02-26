@@ -4,7 +4,16 @@ from config.constants import profit_percent
 
 
 class CustomUser(AbstractUser):
-    """ User model with additional fields """
+    """
+    User model with additional fields
+
+    :field email: user email address
+    :field email_checked: is email proved by following link in send message
+    :field is_moderator: is user has a moderator permissions
+    :field pairs_count: count of pairs added by this user
+    :field profit_level: the level of benefits received by this user
+    :field profit: benefit of this user in dollars
+    """
 
     email = models.EmailField(unique=True)
     email_checked = models.BooleanField(default=False)

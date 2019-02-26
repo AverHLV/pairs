@@ -658,7 +658,7 @@ def process_order(order):
 def make_purchases():
     """ Make automated purchases for unprocessed orders """
 
-    orders = Order.objects.filter(buying_status=False)
+    orders = Order.objects.filter(all_set=False)
 
     if not len(orders):
         logger.info('No orders to make purchases')
@@ -672,16 +672,15 @@ def make_purchases():
     try:
         buyer = SeleniumBuyer(eb_credentials, pp_credentials)
 
-    except PurchaseStoppedException as e:
+    except (PurchaseStoppedException, ValueError) as e:
         logger.critical('Buyer init failed: {0}'.format(e))
         return
 
     # make purchases
 
     for order in orders:
-        ebay_price = 0
         items_prices = None
-        order.buying_status = True
+        ebay_price, total_profit = 0, 0
         order.items_buying_status, profits = {}, {}
 
         # preparations
@@ -708,6 +707,7 @@ def make_purchases():
                     'Too high quantity: {0}, for item: {1}'.format(order.items_counts[str(item.id)], item.id)
                 )
 
+                item_number += 1
                 continue
 
             ebay_ids = item.ebay_ids.split(';')
@@ -718,9 +718,12 @@ def make_purchases():
                 if not len(buying_condition):
                     logger.critical('Building buying condition failed, for item: {0}. Aborting.'.format(item.asin))
                     order.items_buying_status[str(item.id)] = False
+                    item_number += 1
                     continue
             else:
                 buying_condition = {item.ebay_ids: order.items_counts[str(item.id)]}
+
+            all_ids_failed = True
 
             for ebay_id in buying_condition:
                 shipping_info['count'] = str(buying_condition[ebay_id])
@@ -733,6 +736,7 @@ def make_purchases():
                     logger.critical('Stopped by: {0}, for id: {1}'.format(e, ebay_id))
                     continue
 
+                all_ids_failed = False
                 ebay_item_price += total
 
                 # set purchase status
@@ -745,12 +749,17 @@ def make_purchases():
 
             ebay_price += ebay_item_price
 
+            if all_ids_failed:
+                item_number += 1
+                continue
+
             # calculate profits
 
             if len(order_items) == 1:
                 # in one item case
 
                 income = order.amazon_price * constants.profit_percentage - ebay_item_price
+                total_profit += income
                 profits[item.owner.username] = item.owner.get_profit(income)
                 item.owner.update_profit(income)
 
@@ -759,6 +768,7 @@ def make_purchases():
 
                 if items_prices[item_number]:
                     income = items_prices[item_number] * constants.profit_percentage - ebay_item_price
+                    total_profit += income
 
                     if item.owner.username in profits:
                         profits[item.owner.username] += item.owner.get_profit(income)
@@ -767,11 +777,15 @@ def make_purchases():
 
                     item.owner.update_profit(income)
 
+                else:
+                    logger.warning('Zero Amazon price for item: {0}'.format(item.asin))
+
             item_number += 1
 
         order.all_set = True
         order.ebay_price = ebay_price
-        order.save(update_fields=['buying_status', 'items_buying_status', 'ebay_price', 'all_set'])
+        order.total_profit = total_profit
+        order.save(update_fields=['all_set', 'items_buying_status', 'ebay_price', 'total_profit'])
         order.set_profits(profits)
 
         logger.info('Order {0} processed'.format(order.order_id))

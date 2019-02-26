@@ -19,10 +19,28 @@ class SeleniumBuyer(object):
 
     def __init__(self, credentials, payment_cred, cashback_cred=None, driver_path=None,
                  wait_page_load_delay=10, wait_frequency=2, headless=True, login_to_cb=False):
+        """
+        SeleniumBuyer initialization
+
+        :param credentials: eBay account credentials
+        :param payment_cred: PayPal account credentials
+        :param cashback_cred: cashback service credentials
+        :param driver_path: path to Chrome webdriver file
+        :param wait_page_load_delay: delay in seconds for waiting until page loaded
+        :param wait_frequency: delay in seconds for WebDriverWait requests frequency
+        :param headless: boolean, run browser in headless mode or not
+        :param login_to_cb: boolean, log in cashback service first or not
+        """
+
         if driver_path is None:
             if os_name == 'nt':
-                driver_path = 'chromedriver.exe'
+                # Windows webdriver path
+
+                from unipath import Path
+                driver_path = Path(__file__).ancestor(1).child('chromedriver.exe')
             else:
+                # *nix driver path
+
                 driver_path = 'chromedriver'
 
         options = Options()

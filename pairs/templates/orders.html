@@ -41,19 +41,15 @@
                                         {{ order.order_id }}
                                     </del>
                                 {% else %}
-                                    {% if order.buying_status %}
-                                        {{ order.order_id }} <sup>purchased</sup>
+                                    {{ order.order_id }}
 
-                                        {% if order.items_buying_status|length %}
-                                            {% define purchase_details|get_item:order.id as message %}
+                                    {% if order.items_buying_status|length %}
+                                        {% define purchase_details|get_item:order.id as message %}
 
-                                            <a class="tooltips" onclick="order_purchase_details({{ message }});">
-                                                <span>Purchase details</span>
-                                                <button type="button">$</button>
-                                            </a>
-                                        {% endif %}
-                                    {% else %}
-                                        {{ order.order_id }}
+                                        <a class="tooltips" onclick="order_purchase_details({{ message }});">
+                                            <span>Purchase details</span>
+                                            <button type="button">$</button>
+                                        </a>
                                     {% endif %}
 
                                     {% if order.all_set and request.user.is_moderator %}

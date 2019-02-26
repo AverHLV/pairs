@@ -119,7 +119,7 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
     # render purchase details pages
 
     purchase_details = {order.id: [render_to_string('buying_details.html', {'order': order})]
-                        for order in orders.filter(buying_status=True)}
+                        for order in orders.filter(items_buying_status__isnull=False)}
 
     profits = [order.calculate_profits(owner) for order in orders]
     orders = Paginator(orders, constants.on_page_obj_number).page(page_number)
@@ -187,8 +187,7 @@ def update_ebay_price(_, order_id, result, __=None):
     order.ebay_price = result
     order.total_profit = round(order.amazon_price * constants.profit_percentage - result, 2)
     order.all_set = True
-    order.buying_status = True
-    order.save(update_fields=['ebay_price', 'total_profit', 'all_set', 'buying_status'])
+    order.save(update_fields=['ebay_price', 'total_profit', 'all_set'])
 
     owner = order.get_first_owner()
     profit = owner.get_profit(order.total_profit)
@@ -345,8 +344,7 @@ def order_profits(request, order_id):
 
             order.set_profits(profits, commit=False)
             order.all_set = True
-            order.buying_status = True
-            order.save(update_fields=['ebay_price', 'total_profit', 'owners_profits', 'all_set', 'buying_status'])
+            order.save(update_fields=['ebay_price', 'total_profit', 'owners_profits', 'all_set'])
 
             return redirect('/orders/')
 
