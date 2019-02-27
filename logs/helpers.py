@@ -22,9 +22,10 @@ def tail(filename, n=50):
 
             filemap = mmap.mmap(file.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_READ)
 
-        try:
-            i = 0
+        i = 0
+        strings = []
 
+        try:
             for i in range(size - 1, -1, -1):
                 if filemap[i] == '\n':
                     n -= 1
@@ -32,10 +33,11 @@ def tail(filename, n=50):
                     if n == -1:
                         break
 
-            return [str(string)[2:-1] for string in filemap[i + 1 if i else 0:].splitlines()]
+            strings = [str(string)[2:-1] for string in filemap[i + 1 if i else 0:].splitlines()]
 
         finally:
             filemap.close()
+            return strings
 
 
 def process_log_strings(strings):
@@ -67,4 +69,5 @@ def process_log_strings(strings):
             processed_strings.append(appended_string)
             appended_string = ''
 
+    processed_strings.append(appended_string)
     return processed_strings
