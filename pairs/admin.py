@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import F
 from re import fullmatch
 from .models import Pair, Order, CustomUser
 
@@ -39,12 +40,29 @@ class PairInline(admin.TabularInline):
     model = Order.items.through
 
 
+class MinPriceFilter(admin.SimpleListFilter):
+    """ Current price equals minimum price filter """
+
+    title = 'Current price = minimum price'
+    parameter_name = 'eq_price'
+
+    def lookups(self, request, model_admin):
+        return ('yes', 'Yes'), ('no', 'No'),
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(amazon_current_price=F('amazon_minimum_price'))
+
+        if self.value() == 'no':
+            return queryset.exclude(amazon_current_price=F('amazon_minimum_price'))
+
+
 @admin.register(Pair)
 class PairAdmin(admin.ModelAdmin):
     readonly_fields = 'created',
     search_fields = 'asin',
     ordering = 'checked', '-created'
-    list_filter = 'is_buybox_winner',
+    list_filter = 'is_buybox_winner', MinPriceFilter
 
     actions = (
         make_pairs_unchecked, make_pairs_checked, make_pairs_checked_false, set_status_3, set_status_4, set_status_6
