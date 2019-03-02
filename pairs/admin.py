@@ -44,6 +44,7 @@ class PairAdmin(admin.ModelAdmin):
     readonly_fields = 'created',
     search_fields = 'asin',
     ordering = 'checked', '-created'
+    list_filter = 'is_buybox_winner',
 
     actions = (
         make_pairs_unchecked, make_pairs_checked, make_pairs_checked_false, set_status_3, set_status_4, set_status_6
