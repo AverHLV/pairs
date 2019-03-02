@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class RepricerStats(models.Model):
@@ -30,4 +30,4 @@ class RepricerStats(models.Model):
     def get_time_str(self):
         """ Get object created time in format 'hours: minutes' """
 
-        return datetime.strftime(self.created, '%H:%M')
+        return datetime.strftime(self.created + timedelta(hours=2), '%H:%M')

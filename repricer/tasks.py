@@ -45,8 +45,15 @@ def reprice():
         price = asin_info[1]
         buybox_status = asin_info[2]
 
-        if price < pair.amazon_minimum_price:
+        # change price if too low
+
+        if not price:
+            price = pair.amazon_approximate_price
+
+        elif price < pair.amazon_minimum_price:
             price = pair.amazon_minimum_price
+
+        # actions according to the BuyBox status
 
         if buybox_status is None:
             # if no BuyBox
@@ -95,9 +102,9 @@ def reprice():
     RepricerStats().save_stats()
     logger.info('Repricer stats saved')
 
-    if len(prices):
-        set_prices(prices)
-        logger.info('Reprice configuration set')
+    if not len(prices):
+        logger.info('Empty reprice configuration')
         return
 
-    logger.info('Empty reprice configuration')
+    set_prices(prices)
+    logger.info('Reprice configuration set')
