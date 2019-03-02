@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ObjectDoesNotExist
-from .models import CustomUser
+from .models import CustomUser, Note
 
 
 class SignUpForm(UserCreationForm):
@@ -25,3 +25,9 @@ class PasswordResetForm(forms.Form):
 
         except ObjectDoesNotExist:
             raise forms.ValidationError('This user does not exist')
+
+
+class NoteForm(forms.ModelForm):
+    class Meta:
+        model = Note
+        fields = 'text',

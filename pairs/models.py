@@ -13,6 +13,26 @@ shipping_info_fields = (
 )
 
 
+class PairsManager(models.Manager):
+    @staticmethod
+    def lowest_price_pairs():
+        """ Return pairs with lowest possible prices """
+
+        pairs = Pair.objects.all()
+        unnecessary_pairs_ids = [pair.id for pair in pairs if pair.amazon_current_price != pair.amazon_minimum_price]
+        return pairs.exclude(id__in=unnecessary_pairs_ids)
+
+
+class OrdersManager(models.Manager):
+    @staticmethod
+    def user_orders(username):
+        """ Return orders where the user owns the item """
+
+        orders = Order.objects.all()
+        unnecessary_orders_ids = [order.id for order in orders if username not in order.get_owners_names()]
+        return orders.exclude(id__in=unnecessary_orders_ids)
+
+
 class TimeStamped(models.Model):
     """ An abstract base class model that provides self updating """
 
@@ -48,6 +68,12 @@ class Pair(TimeStamped):
         max: price = ebay_price * ebay_price related interval coeff / profit percentage;
         amazon_approximate_price = max price * max price between eBay items * max price between eBay items coeff
 
+    :field amazon_minimum_price: minimum possible price for item on Amazon, calculated by formulas:
+        min: price = ebay_price * ebay_price related interval coeff / profit percentage;
+        amazon_minimum_price = ebay_price * price related interval / profit percentage
+
+    :field amazon_current_price: current item price on Amazon
+    :field is_buybox_winner: indicates if pair win the buybox or not, also False for no-buybox pairs
     :field reason message: custom message with reason of unsuitable check
 
     """
@@ -60,14 +86,23 @@ class Pair(TimeStamped):
     ebay_ids = models.CharField(max_length=ebay_ids_length)
     quantity = models.PositiveIntegerField(blank=True, null=True)
     amazon_approximate_price = models.FloatField()
+    amazon_minimum_price = models.FloatField()
+    amazon_current_price = models.FloatField(default=0)
+    is_buybox_winner = models.BooleanField(default=False)
     reason_message = models.CharField(max_length=constants.reason_message_max_length, blank=True)
-    objects = models.Manager()
+    objects = PairsManager()
 
     class Meta:
         db_table = 'pairs'
 
     def __str__(self):
         return str(self.asin)
+
+    def set_buybox_status(self, status, commit=True):
+        self.is_buybox_winner = status
+
+        if commit:
+            self.save(update_fields=['is_buybox_winner'])
 
     def check_quantity(self):
         """ Update item quantity by eBay quantity value """
@@ -93,16 +128,6 @@ class Pair(TimeStamped):
                 quantity += get_ebay_quantity_from_response(response)
 
         self.quantity = quantity
-
-
-class OrdersManager(models.Manager):
-    @staticmethod
-    def user_orders(username):
-        """ Return orders where the user owns the item """
-
-        orders = Order.objects.all()
-        unnecessary_orders_ids = [order.id for order in orders if username not in order.get_owners_names()]
-        return orders.exclude(id__in=unnecessary_orders_ids)
 
 
 class Order(TimeStamped):

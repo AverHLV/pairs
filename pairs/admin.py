@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Pair, Order
+from re import fullmatch
+from .models import Pair, Order, CustomUser
 
 
 def make_pairs_unchecked(_, __, queryset):
@@ -47,6 +48,40 @@ class PairAdmin(admin.ModelAdmin):
     actions = (
         make_pairs_unchecked, make_pairs_checked, make_pairs_checked_false, set_status_3, set_status_4, set_status_6
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        """ Custom pair search """
+
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+
+        if fullmatch('[A-Z0-9]{2}-[A-Z0-9]{4}-[A-Z0-9]{4}', search_term) is not None:
+            # search by sku
+
+            try:
+                queryset |= self.model.objects.filter(seller_sku=search_term)
+
+            finally:
+                return queryset, use_distinct
+
+        elif fullmatch('[0-9]{12}', search_term) is not None:
+            # search by eBay id
+
+            try:
+                queryset |= self.model.objects.filter(ebay_ids__contains=search_term)
+
+            finally:
+                return queryset, use_distinct
+
+        elif fullmatch('[A-Z0-9]{10}', search_term) is None:
+            # search by owner username
+
+            try:
+                queryset |= self.model.objects.filter(owner=CustomUser.objects.get(username=search_term))
+
+            finally:
+                return queryset, use_distinct
+
+        return queryset, use_distinct
 
 
 @admin.register(Order)

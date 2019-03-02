@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import CustomUser, Note
 
 
 def make_email_checked(_, __, queryset):
@@ -45,3 +45,22 @@ class CustomUserAdmin(UserAdmin):
 
 
 CustomUserAdmin.fieldsets += ('CustomUser fields', {'fields': ('pairs_count', 'profit_level', 'profit')}),
+
+
+@admin.register(Note)
+class NoteAdmin(admin.ModelAdmin):
+    model = Note
+    readonly_fields = 'created',
+    search_fields = 'text',
+    ordering = '-created',
+
+    def get_search_results(self, request, queryset, search_term):
+        """ Search by author username """
+
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+
+        try:
+            queryset |= self.model.objects.filter(author=CustomUser.objects.get(username=search_term))
+
+        finally:
+            return queryset, use_distinct

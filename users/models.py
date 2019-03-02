@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from config.constants import profit_percent
+from config import constants
 
 
 class CustomUser(AbstractUser):
@@ -28,12 +28,17 @@ class CustomUser(AbstractUser):
     def get_profit(self, profit):
         """ Calculate profit for this user """
 
-        return round(profit * profit_percent[self.profit_level]['mine'], 2)
+        return round(profit * constants.profit_percent[self.profit_level]['mine'], 2)
+
+    def get_relative_profit(self):
+        """ Calculate relative profit according to user pairs count """
+
+        return self.profit * (self.pairs_count / constants.pair_minimum)
 
     def recover_profit(self, profit):
         """ Calculate initial income by user profit """
 
-        return profit / profit_percent[self.profit_level]['mine']
+        return profit / constants.profit_percent[self.profit_level]['mine']
 
     def update_profit(self, profit, increase=True):
         """ Update profit of this user and all others in the established hierarchy """
@@ -45,7 +50,7 @@ class CustomUser(AbstractUser):
 
         self.save(update_fields=['profit'])
 
-        profit_vector = profit_percent[self.profit_level]
+        profit_vector = constants.profit_percent[self.profit_level]
         levels = list(profit_vector.keys())
         levels.remove('mine')
 
@@ -57,3 +62,21 @@ class CustomUser(AbstractUser):
                     user.profit -= profit * profit_vector[level]
 
                 user.save(update_fields=['profit'])
+
+
+class Note(models.Model):
+    """ Model for user private notes """
+
+    text = models.TextField()
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    objects = models.Manager()
+
+    class Meta:
+        db_table = 'notes'
+
+    def __str__(self):
+        if len(self.text) < constants.note_preview_length:
+            return '{0}`s note. {1}'.format(self.author, self.text)
+        else:
+            return '{0}`s note. {1}...'.format(self.author, self.text[:constants.note_preview_length])

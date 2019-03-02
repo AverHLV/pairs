@@ -4,7 +4,14 @@
 {% block content %}
     {% if not search %}
         <div class="profit">
-            <span id="profit_span" style="padding: 15px;">Total profit: {{ request.user.profit|floatformat:2 }}$</span>
+            <span id="profit_span" style="padding: 15px;">
+                {% if not request.user.profit_level %}
+                    Total profit: {{ request.user.profit|floatformat:2 }}$,
+                    relative profit: {{ request.user.get_relative_profit|floatformat:2 }}$
+                {% else %}
+                    Total profit: {{ request.user.profit|floatformat:2 }}$
+                {% endif %}
+            </span>
         </div>
     {% endif %}
 

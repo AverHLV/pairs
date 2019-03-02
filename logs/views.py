@@ -14,6 +14,8 @@ def logs(request, log_type):
         log = tail(constants.default_log_path)
     elif log_type == 'workflow':
         log = tail(constants.workflow_log_path)
+    elif log_type == 'repricer':
+        log = tail(constants.repricer_log_path)
     else:
         raise Http404
 

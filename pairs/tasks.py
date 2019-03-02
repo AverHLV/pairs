@@ -7,7 +7,8 @@ from time import sleep
 from uuid import uuid4
 from config import constants
 from .models import Pair, Order, shipping_info_fields
-from .parsers import get_price_from_response, get_ebay_price_from_response
+from .helpers import get_item_price_info
+from .parsers import get_ebay_price_from_response
 
 from utils import (
     ebay_trading_api,                                                                     # eBay apis
@@ -213,29 +214,22 @@ def update_pairs_quantity():
     logger.info('Pairs quantity update complete.')
 
 
-def get_prices(asins, delay=0.5):
+def get_prices(asins):
     """ Get BuyBox or lowest listing prices for all asins with delay request period """
 
-    prices = []
+    prices = get_item_price_info(asins, logger)
 
-    for asin in asins:
-        try:
-            response = amazon_products_api.api.get_lowest_priced_offers_for_asin(amazon_products_api.region, asin)
+    if prices is None:
+        return
 
-        except amazon_products_api.connection_error as e:
-            logger.critical('Unhandled Amazon Feeds api error: {0}, for asin: {1}'.format(e, asin))
-            continue
+    for i in range(len(prices)):
+        pair = Pair.objects.get(asin=prices[i][0])
 
-        else:
-            price = get_price_from_response(response)
+        if not prices[i][1]:
+            prices[i][1] = pair.amazon_approximate_price
 
-            if not price:
-                pair = Pair.objects.get(asin=asin)
-                price = pair.amazon_approximate_price
-
-            prices.append((asin, price))
-
-        sleep(delay)
+        pair.amazon_current_price = prices[i][1]
+        pair.save(update_fields=['amazon_current_price'])
 
     logger.info('Lowest prices received.')
     return prices
@@ -270,17 +264,28 @@ def set_prices(asins_prices):
     logger.info('Prices are set')
 
 
-def set_prices_local(asins_prices):
-    """ Set Amazon approximate prices in db """
+def set_prices_local(asins_prices, for_min_price=False, for_current_price=False):
+    """ Set Amazon approximate or minimum prices in db """
 
     for message in asins_prices:
         pair = Pair.objects.get(asin=message[0])
-        pair.amazon_approximate_price = message[1]
-        pair.save(update_fields=['amazon_approximate_price'])
+
+        if for_current_price:
+            pair.amazon_current_price = message[1]
+            pair.save(update_fields=['amazon_current_price'])
+            continue
+
+        if not for_min_price:
+            pair.amazon_approximate_price = message[1]
+            pair.save(update_fields=['amazon_approximate_price'])
+
+        else:
+            pair.amazon_minimum_price = message[1]
+            pair.save(update_fields=['amazon_minimum_price'])
 
 
-def calc_app_price(input_ebay_prices):
-    """ Calculate Amazon approximate price """
+def calc_app_price(input_ebay_prices, for_min_price=False):
+    """ Calculate Amazon approximate or minimum price """
 
     prices, ebay_prices = [], []
 
@@ -309,15 +314,24 @@ def calc_app_price(input_ebay_prices):
         if interval[0] <= max_ebay_price < interval[1]:
             max_ebay_price_coeff = constants.amazon_approximate_price_percent[interval]
 
-    return round(max_price + max_ebay_price * max_ebay_price_coeff, 2)
+    if not for_min_price:
+        return round(max_price + max_ebay_price * max_ebay_price_coeff, 2)
+
+    return round(min(prices), 2)
 
 
-def empty_app_prices():
-    """ Populate empty approximate Amazon prices in db """
+def empty_app_prices(for_min_price=False):
+    """ Populate empty approximate or minimum Amazon prices in db """
 
     asins_prices = []
-    ebay_ids = [(pair.asin, pair.ebay_ids.split(';')) for pair in Pair.objects.all()
-                if not pair.amazon_approximate_price]
+
+    if not for_min_price:
+        ebay_ids = [(pair.asin, pair.ebay_ids.split(';')) for pair in Pair.objects.all()
+                    if not pair.amazon_approximate_price]
+
+    else:
+        ebay_ids = [(pair.asin, pair.ebay_ids.split(';')) for pair in Pair.objects.all()
+                    if not pair.amazon_minimum_price]
 
     for pair_info in ebay_ids:
         ebay_price = []
@@ -332,14 +346,14 @@ def empty_app_prices():
             print(pair_info[0])
 
         else:
-            app_price = calc_app_price(ebay_price)
+            app_price = calc_app_price(ebay_price, for_min_price)
 
             if not app_price:
                 print(pair_info[0])
 
             asins_prices.append((pair_info[0], app_price))
 
-    set_prices_local(asins_prices)
+    set_prices_local(asins_prices, for_min_price)
     print('Done')
 
 
@@ -398,12 +412,11 @@ def check_feed_done(delay=60, max_cycle_count=90):
 
 
 @shared_task(name='Amazon workflow')
-def amazon_update(delay=constants.amazon_workflow_delay, get_price_delay=constants.amazon_get_price_delay, tries=3):
+def amazon_update(delay=constants.amazon_workflow_delay, tries=3):
     """
     Amazon items update workflow
 
     :param delay: sleep period in seconds between workflow operations
-    :param get_price_delay: maximum GetMyPriceForASIN requests per hour
     :param tries: number of tries in SubmitFeed failure case
     """
 
@@ -439,26 +452,15 @@ def amazon_update(delay=constants.amazon_workflow_delay, get_price_delay=constan
 
         # get prices from Amazon
 
-        if len(asins) > constants.amazon_get_price_limit:
-            prices = []
-            parts = [asins[x:x + constants.amazon_get_price_limit] for x in range(0, len(asins),
-                                                                                  constants.amazon_get_price_limit)]
+        prices = get_prices(asins)
 
-            for part in parts:
-                prices += get_prices(part)
-                sleep(get_price_delay)
-
-        else:
-            prices = get_prices(asins)
+        if prices is None:
+            logger.critical('Empty prices list before setting prices')
+            return
 
         # set prices by uploaded asins
 
         feed_cycle(tries, delay, 'Workflow failed on setting prices', set_prices, prices)
-
-        if not len(prices):
-            logger.info('Amazon workflow complete')
-            return
-
         sleep(delay)
         check_feed_done()
 

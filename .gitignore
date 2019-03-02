@@ -3,6 +3,5 @@ migrations
 *.log
 run_*.py
 start.bat
-celerybeat-schedule.???
 chromedriver
 chromedriver.exe

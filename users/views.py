@@ -1,6 +1,8 @@
 from django.contrib.auth import login
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -9,10 +11,11 @@ from django.template.context_processors import csrf
 from django.core.mail import send_mail
 from django.core.exceptions import ObjectDoesNotExist
 from smtplib import SMTPException
+from config import constants
 from utils import secret_dict, logger
 from .tokens import account_activation_token, password_reset_token
-from .models import CustomUser
-from .forms import SignUpForm, PasswordResetForm
+from .models import CustomUser, Note
+from .forms import SignUpForm, PasswordResetForm, NoteForm
 
 
 def signup(request):
@@ -174,3 +177,40 @@ def activate(request, uidb64, token):
         return render(request, 'message.html', {
             'message': 'The confirmation link was invalid, possibly because it already has been used.'
         })
+
+
+@login_required
+def notes_paginator(request, page_number=1):
+    """ Display notes for specific user """
+
+    notes = Note.objects.filter(author=request.user).order_by('-created')
+    notes = Paginator(notes, constants.on_page_obj_number).page(page_number)
+
+    return render(request, 'notes.html', {
+        'notes': notes,
+        'page_range': constants.page_range,
+        'current_page': page_number
+    })
+
+
+@login_required
+def add_note(request):
+    """ Add a new user note """
+
+    context = {'form': NoteForm(), 'action': '/auth/notes/add_note/', 'button_text': 'Add note'}
+    context.update(csrf(request))
+
+    if request.POST:
+        form = NoteForm(request.POST)
+
+        if form.is_valid():
+            new_note = form.save(commit=False)
+            new_note.author = request.user
+            new_note.save()
+
+            return redirect('/auth/notes/')
+
+        else:
+            context['form'] = form
+
+    return render(request, 'form.html', context)

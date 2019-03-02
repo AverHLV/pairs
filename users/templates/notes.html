@@ -1,0 +1,60 @@
+{% extends 'main.html' %}
+{% load pairs_extras %}
+{% block content %}
+    <div class="row"><div class="column">
+        <div style="overflow-x:auto;">
+            {% if notes %}
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Note</th>
+                    </tr>
+
+                    {% for note in notes %}
+                        <tr>
+                            <td style="white-space: nowrap;">{{ note.created }}</td>
+                            <td style="text-align: left;">{{ note.text }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+
+            {% else %}
+                <big>You have not added any notes yet.</big>
+            {% endif %}
+        </div>
+    </div></div>
+
+    {% if notes %}
+        <div class="paginator">
+            {% if notes.has_previous %}
+                {% if notes.previous_page_number != 1 %}
+                    <a href="/auth/notes/page/1/">&laquo;</a>
+                {% endif %}
+
+                <a href="/auth/notes/page/{{ notes.previous_page_number }}/">&lt;</a>
+            {% else %}
+                &lt;
+            {% endif %}
+
+            {% for page in notes.paginator.page_range %}
+                {% if page < current_page|add:page_range and page > current_page|subtract:page_range %}
+                    {% if page == current_page %}
+                        {{ page }}
+                    {% else %}
+                        <a href="/auth/notes/page/{{ forloop.counter }}/">{{ page }}</a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            {% if notes.has_next %}
+                <a href="/auth/notes/page/{{ notes.next_page_number }}/">&gt;</a>
+
+                {% if notes.next_page_number != notes.paginator.num_pages %}
+                    <a href="/auth/notes/page/{{ notes.paginator.num_pages }}/">&raquo;</a>
+                {% endif %}
+            {% else %}
+                &gt;
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

@@ -4,9 +4,9 @@ from mpld3 import fig_to_html, plugins
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import get_current_timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 from decorators import moderator_required
-from config.constants import pair_minimum
+from config import constants
 from pairs.models import Order
 from users.models import CustomUser
 
@@ -16,7 +16,10 @@ from users.models import CustomUser
 def users(request):
     """ Users stats page """
 
-    return render(request, 'users.html', {'users': CustomUser.objects.order_by('username'), 'pair_min': pair_minimum})
+    return render(request, 'users.html', {
+        'users': CustomUser.objects.order_by('username'),
+        'pair_min': constants.pair_minimum
+    })
 
 
 @login_required
@@ -80,18 +83,48 @@ def graphs(request):
     plt.xlabel('Days')
     plt.title('Orders stats')
 
+    fig3.tight_layout()
+
+    # repricer stats
+
+    from repricer.models import RepricerStats
+    fig4 = plt.figure()
+
+    stats = RepricerStats.objects.filter(created__gte=datetime.now(get_current_timezone()) - timedelta(
+        days=constants.repricer_stats_days))
+
+    buybox_counts, minimum_price_counts, dates = [], [], []
+
+    for stat in stats:
+        buybox_counts.append(stat.buybox_count)
+        minimum_price_counts.append(stat.min_price_count)
+        dates.append(stat.get_time_str())
+
+    line3 = plt.plot(dates, buybox_counts, c='g', marker='o')
+    line4 = plt.plot(dates, minimum_price_counts, c='b', marker='s')
+    plt.xticks(range(len(dates)), labels=dates)
+    plt.legend(['BB count', 'LP count'])
+    plt.xlabel('Time')
+    plt.title('Repricer stats')
+
+    fig4.tight_layout()
+
     # tooltips
 
     labels1 = ['count: {0}'.format(x) for x in ordercounts]
     labels2 = ['profit: {0}'.format(x) for x in orderprofits]
+    labels3 = ['BB count: {0}'.format(x) for x in buybox_counts]
+    labels4 = ['LP count: {0}'.format(x) for x in minimum_price_counts]
     tooltip1 = plugins.PointHTMLTooltip(line1[0], labels1)
     tooltip2 = plugins.PointHTMLTooltip(line2[0], labels2)
+    tooltip3 = plugins.PointHTMLTooltip(line3[0], labels3)
+    tooltip4 = plugins.PointHTMLTooltip(line4[0], labels4)
     plugins.connect(fig3, tooltip1, tooltip2)
-
-    fig3.tight_layout()
+    plugins.connect(fig4, tooltip3, tooltip4)
 
     return render(request, 'graphs.html', {
         'figure1': fig_to_html(fig1),
         'figure2': fig_to_html(fig2),
-        'figure3': fig_to_html(fig3)
+        'figure3': fig_to_html(fig3),
+        'figure4': fig_to_html(fig4)
     })

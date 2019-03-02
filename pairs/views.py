@@ -10,6 +10,7 @@ from config import constants
 from decorators import moderator_required, is_ajax
 from datetime import datetime, timedelta
 from .models import Pair, Order, CustomUser
+from .helpers import pairs_search
 from .forms import PairForm, SearchForm, OrderProfitsForm, OrderReturnForm, OrderFilterForm
 
 
@@ -216,6 +217,7 @@ def add_pair(request):
             if new_pair.sku is not None:
                 pair.seller_sku = new_pair.sku
 
+            pair.amazon_minimum_price = new_pair.amazon_minimum_price
             pair.amazon_approximate_price = new_pair.amazon_approximate_price
             pair.check_quantity()
             pair.save()
@@ -287,18 +289,13 @@ def search_for(request):
         context['form'] = form
 
         if form.is_valid():
-            if request.user.is_moderator:
-                if not int(form.cleaned_data['search_type']):
-                    pairs = Pair.objects.filter(asin=form.cleaned_data['search_field'])
-                else:
-                    orders = Order.objects.filter(order_id=form.cleaned_data['search_field'])
-                    return orders_paginator(request, for_search=True,
-                                            search_order=orders.order_by('-created'))
+            if int(form.cleaned_data['search_type']):
+                orders = Order.objects.filter(order_id=form.cleaned_data['search_field'])
+                return orders_paginator(request, for_search=True,
+                                        search_order=orders.order_by('-created'))
 
-            else:
-                pairs = Pair.objects.filter(owner=request.user).filter(asin=form.cleaned_data['search_field'])
-
-            return pairs_paginator(request, for_search=True, search_pair=pairs.order_by('-created'))
+            pairs = pairs_search(form.cleaned_data['search_field'], request.user)
+            return pairs_paginator(request, for_search=True, search_pair=pairs.order_by('checked', '-created'))
 
     return render(request, 'form.html', context)
 

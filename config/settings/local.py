@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'stats',
     'buyer',
     'users',
-    'logs'
+    'logs',
+    'repricer'
 ]
 
 MIDDLEWARE = [

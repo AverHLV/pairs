@@ -3,7 +3,8 @@ from re import search
 from requests.adapters import ConnectionError
 from config import constants
 from utils import ebay_trading_api, amazon_products_api, logger
-from .parsers import get_rank_from_response, get_price_from_response, get_delivery_time, get_ebay_price_from_response
+from .helpers import get_item_price_info
+from .parsers import get_rank_from_response, get_delivery_time, get_ebay_price_from_response
 from .models import Pair
 
 
@@ -18,6 +19,7 @@ class PairForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.amazon_price = 0
+        self.amazon_minimum_price = 0
         self.amazon_approximate_price = 0
         self.ebay_price = []
         self.old_data = old_data
@@ -93,6 +95,7 @@ class PairForm(forms.ModelForm):
             if interval[0] <= max_ebay_price < interval[1]:
                 max_ebay_price_coeff = constants.amazon_approximate_price_percent[interval]
 
+        self.amazon_minimum_price = round(min(prices), 2)
         self.amazon_approximate_price = round(max_price + max_ebay_price * max_ebay_price_coeff, 2)
         return True
 
@@ -117,26 +120,12 @@ class PairForm(forms.ModelForm):
 
         # validation based on api response
 
-        '''
-        amazon_products_api.check_calls(True, forms.ValidationError,
-                                        'Amazon api calls number is over.Please try to add pair after {0} o’clock.'
-                                        .format(amazon_products_api.checker.start_time), code='am3')
-        '''
-
         try:
             response = amazon_products_api.api.get_matching_product_for_id(amazon_products_api.region, 'ASIN', [asin])
-
-            '''
-            amazon_products_api.check_calls(True, forms.ValidationError,
-                                            'Amazon api calls number is over. Please try to add pair after {0} o’clock.'
-                                            .format(amazon_products_api.checker.start_time), code='am3')
-            '''
-
             response_my_product = amazon_products_api.api.get_my_price_for_asin(amazon_products_api.region, [asin])
-            response_price = amazon_products_api.api.get_lowest_priced_offers_for_asin(amazon_products_api.region, asin)
 
         except amazon_products_api.connection_error as e:
-            logger.warning(e.response)
+            logger.warning(e)
             raise forms.ValidationError({'asin': 'Amazon api unhandled error: {0}.'.format(e)}, code='am5')
 
         else:
@@ -148,7 +137,7 @@ class PairForm(forms.ModelForm):
                     error = response.parsed['Error']['Code']['value']
                     logger.warning(error)
                     raise forms.ValidationError({'asin': 'Amazon api unhandled error in response! Error: {0}.'
-                                                .format(error)}, code='am7')
+                                                .format(error)}, code='am5')
 
             except KeyError:
                 pass
@@ -171,7 +160,12 @@ class PairForm(forms.ModelForm):
                                           ['LandedPrice']['Amount']['value'])
 
             except (KeyError, ValueError):
-                self.amazon_price = get_price_from_response(response_price)
+                self.amazon_price = get_item_price_info([asin], logger)
+
+                if self.amazon_price is None:
+                    raise forms.ValidationError({'asin': 'Getting price from Amazon failed'}, code='am10')
+
+                self.amazon_price = self.amazon_price[0][0]
 
                 if not self.amazon_price:
                     self.variated_item = True
@@ -352,7 +346,8 @@ class SearchForm(forms.Form):
     """ Search form for pairs and orders """
 
     search_field = forms.CharField(max_length=constants.order_id_length, required=True)
-    search_type = forms.ChoiceField(choices=((0, 'Pairs (ASIN)'), (1, 'Orders (Order ID)')), required=True)
+    search_type = forms.ChoiceField(choices=((0, 'Pairs (ASIN, eBay ID, SKU or owner username)'),
+                                             (1, 'Orders (Order ID)')), required=True)
 
     def __init__(self, is_moderator=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -361,26 +356,23 @@ class SearchForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
 
-        # validation based on search_type (ASIN or Order ID)
+        # validation based on search_type
 
-        if not int(cleaned_data['search_type']):
-            if len(cleaned_data['search_field']) != constants.asin_length:
-                raise forms.ValidationError('ASIN should be {0} length.'.format(constants.asin_length), code='sam1')
-
-            if search('[^A-Z0-9]', cleaned_data['search_field']):
-                raise forms.ValidationError('ASIN should contains only numbers and uppercase letters.', code='sam2')
-
-        else:
+        if int(cleaned_data['search_type']):
             if not self.is_moderator:
-                raise forms.ValidationError('Your account type does not have the rights to search for orders.',
-                                            code='sam3')
+                raise forms.ValidationError({
+                    'search_type': 'Your account type does not have the rights to search for orders.'
+                }, code='sam1')
 
             if len(cleaned_data['search_field']) != constants.order_id_length:
-                raise forms.ValidationError('Order ID should be {0} length.'.format(constants.order_id_length),
-                                            code='sam4')
+                raise forms.ValidationError({
+                    'search_field': 'Order ID should be {0} length.'.format(constants.order_id_length)
+                }, code='sam2')
 
             if search('[^0-9-]', cleaned_data['search_field']):
-                raise forms.ValidationError('Order ID should contains only numbers and hyphen (-).', code='sam5')
+                raise forms.ValidationError({
+                    'search_field': 'Order ID should contains only numbers and hyphen (-).'
+                }, code='sam3')
 
         return cleaned_data
 
@@ -440,7 +432,7 @@ class OrderReturnForm(forms.Form):
         loss = self.cleaned_data['loss']
 
         if loss <= 0:
-            raise forms.ValidationError('Loss value must be greater than 0.', code='or1')
+            raise forms.ValidationError({'loss': 'Loss value must be greater than 0.'}, code='or1')
 
         return loss
 

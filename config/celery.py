@@ -23,14 +23,20 @@ app.conf.task_default_queue = 'default'
 app.conf.task_queues = (
     Queue('default', routing_key='tasks'),
     Queue('workflow', routing_key='workflow'),
+    Queue('repricer', routing_key='repricer')
 )
 
 task_default_exchange = 'tasks'
 task_default_routing_key = 'tasks'
 
 task_routes = {
-        'pairs.tasks.amazon_update': {
-            'queue': 'workflow',
-            'routing_key': 'workflow',
-        },
+    'pairs.tasks.amazon_update': {
+        'queue': 'workflow',
+        'routing_key': 'workflow',
+    },
+
+    'repricer.tasks.reprice': {
+        'queue': 'repricer',
+        'routing_key': 'repricer',
+    }
 }

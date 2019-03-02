@@ -162,6 +162,153 @@ def get_my_price_from_response(response):
                 return [0]
 
 
+def get_buybox_price_from_response(price_info, response):
+    """
+    Append given price_info list with asins by GetCompetitivePricingForASIN response in format:
+        price_info element: [asin, price, is_buybox_winner]
+    """
+
+    def fill_price_info(index):
+        try:
+            price = float(comp_price_dict['Price']['LandedPrice']['Amount']['value'])
+
+        except (KeyError, ValueError):
+            try:
+                price = float(comp_price_dict['Price']['ListingPrice']['Amount']['value'])
+
+            except (KeyError, ValueError):
+                price = 0
+
+        price_info[index].append(price)
+
+        if comp_price_dict['belongsToRequester']['value'] == 'true':
+            price_info[index].append(True)
+        else:
+            price_info[index].append(False)
+
+    # parse response
+
+    try:
+        response.parsed[0]
+
+    except KeyError:
+        if not len(response.parsed['Product']['CompetitivePricing']['CompetitivePrices']):
+            price_info[0].append(0)
+            price_info[0].append(None)
+
+        else:
+            comp_price_dict = response.parsed['Product']['CompetitivePricing']['CompetitivePrices']['CompetitivePrice']
+            fill_price_info(0)
+
+    else:
+        for i in range(len(response.parsed)):
+            if not len(response.parsed[i]['Product']['CompetitivePricing']['CompetitivePrices']):
+                price_info[i].append(0)
+                price_info[i].append(None)
+
+            else:
+                comp_price_dict = response.parsed[i]['Product']['CompetitivePricing']['CompetitivePrices'][
+                    'CompetitivePrice']
+                fill_price_info(i)
+
+
+def get_no_buybox_price_from_response(asins_no_buybox, response):
+    """
+    Append given asins_no_buybox list with lowest listing prices from GetLowestOfferListingsForASIN response
+    in format:
+        asins_no_buybox element: (asin, price)
+    """
+
+    try:
+        response.parsed[0]
+
+    except KeyError:
+        # if response for one item
+
+        if not len(response.parsed['Product']['LowestOfferListings']):
+            # if not available
+
+            asins_no_buybox[0] = asins_no_buybox[0], 0
+            return
+
+        try:
+            response.parsed['Product']['LowestOfferListings']['LowestOfferListing'][0]
+
+        except KeyError:
+            listing_info = response.parsed['Product']['LowestOfferListings']['LowestOfferListing']
+
+            try:
+                price = float(listing_info['Price']['LandedPrice']['Amount']['value'])
+
+            except (KeyError, ValueError):
+                try:
+                    price = float(listing_info['Price']['ListingPrice']['Amount']['value'])
+
+                except (KeyError, ValueError):
+                    price = 0
+
+            asins_no_buybox[0] = asins_no_buybox[0], price
+
+        else:
+            try:
+                prices = [float(price['Price']['LandedPrice']['Amount']['value'])
+                          for price in response.parsed['Product']['LowestOfferListings']['LowestOfferListing']]
+
+            except (KeyError, ValueError):
+                try:
+                    prices = [float(price['Price']['ListingPrice']['Amount']['value'])
+                              for price in response.parsed['Product']['LowestOfferListings']['LowestOfferListing']]
+
+                except (KeyError, ValueError):
+                    prices = [0]
+
+            asins_no_buybox[0] = asins_no_buybox[0], min(prices)
+
+    else:
+        # if multiple items
+
+        for i in range(len(response.parsed)):
+            if not len(response.parsed[i]['Product']['LowestOfferListings']):
+                # if not available
+
+                asins_no_buybox[i] = asins_no_buybox[i], 0
+                continue
+
+            try:
+                response.parsed[i]['Product']['LowestOfferListings']['LowestOfferListing'][0]
+
+            except KeyError:
+                listing_info = response.parsed[i]['Product']['LowestOfferListings']['LowestOfferListing']
+
+                try:
+                    price = float(listing_info['Price']['LandedPrice']['Amount']['value'])
+
+                except (KeyError, ValueError):
+                    try:
+                        price = float(listing_info['Price']['ListingPrice']['Amount']['value'])
+
+                    except (KeyError, ValueError):
+                        price = 0
+
+                asins_no_buybox[i] = asins_no_buybox[i], price
+
+            else:
+                try:
+                    prices = [float(price['Price']['LandedPrice']['Amount']['value'])
+                              for price in response.parsed[i]['Product']['LowestOfferListings']['LowestOfferListing']]
+
+                except (KeyError, ValueError):
+                    try:
+                        prices = [float(price['Price']['ListingPrice']['Amount']['value'])
+                                  for price in response.parsed[i]['Product']['LowestOfferListings'][
+                                      'LowestOfferListing']]
+
+                    except (KeyError, ValueError):
+                        prices = [0]
+
+                asins_no_buybox[i] = asins_no_buybox[i], min(prices)
+
+
 def get_amazon_upc(asin):
     """ Get item UPC from Amazon item page """
 
