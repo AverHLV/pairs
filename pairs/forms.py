@@ -165,7 +165,7 @@ class PairForm(forms.ModelForm):
                 if self.amazon_price is None:
                     raise forms.ValidationError({'asin': 'Getting price from Amazon failed'}, code='am10')
 
-                self.amazon_price = self.amazon_price[0][0]
+                self.amazon_price = self.amazon_price[0][1]
 
                 if not self.amazon_price:
                     self.variated_item = True
