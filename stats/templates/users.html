@@ -11,7 +11,13 @@
             {% for user in users %}
                 <tr>
                     <td>{{ user.username }}</td>
-                    <td>{{ user.profit }}$</td>
+
+                    {% if not user.profit_level %}
+                        <td>{{ user.get_relative_profit }}</td>
+                    {% else %}
+                        <td>{{ user.profit }}</td>
+                    {% endif %}
+
                     <td>{{ user.pairs_count }} / {{ pair_min }}</td>
                 </tr>
             {% endfor %}
