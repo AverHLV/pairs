@@ -107,6 +107,7 @@ class PairAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     readonly_fields = 'created',
     search_fields = 'order_id',
+    list_filter = 'all_set', 'multi', 'returned'
     ordering = '-purchase_date',
     inlines = PairInline,
     exclude = 'items',
