@@ -378,6 +378,17 @@ def get_ebay_quantity_from_response(response):
     return 0
 
 
+def get_seller_id_from_response(response):
+    """ Get eBay seller UserID from GetItem response """
+
+    seller_id = response.reply.Item.Seller.UserID
+
+    if not len(seller_id):
+        return
+
+    return seller_id
+
+
 def get_delivery_time(ebay_id):
     """
     Get delivery time in days from eBay item page

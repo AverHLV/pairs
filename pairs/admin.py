@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import F
 from re import fullmatch
-from .models import Pair, Order, CustomUser
+from .models import Pair, Order, CustomUser, NotAllowedSeller
 
 
 def make_pairs_unchecked(_, __, queryset):
@@ -110,3 +110,9 @@ class OrderAdmin(admin.ModelAdmin):
     ordering = '-purchase_date',
     inlines = PairInline,
     exclude = 'items',
+
+
+@admin.register(NotAllowedSeller)
+class NASellerAdmin(admin.ModelAdmin):
+    search_fields = 'ebay_user_id',
+    ordering = 'ebay_user_id',

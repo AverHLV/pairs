@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from config import constants
 from decorators import moderator_required, is_ajax
 from datetime import datetime, timedelta
-from .models import Pair, Order, CustomUser
+from .models import Pair, Order, CustomUser, NotAllowedSeller
 from .helpers import pairs_search
 from .forms import PairForm, SearchForm, OrderProfitsForm, OrderReturnForm, OrderFilterForm
 
@@ -275,6 +275,13 @@ def profits_table(request):
         'profit_percentage': constants.profit_percentage,
         'buffer': constants.profit_buffer
     })
+
+
+@login_required
+def na_sellers_table(request):
+    """ eBay sellers blacklist table """
+
+    return render(request, 'na_sellers_table.html', {'sellers': NotAllowedSeller.objects.order_by('ebay_user_id')})
 
 
 @login_required

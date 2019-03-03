@@ -1,11 +1,15 @@
 from django import forms
+from django.template.loader import render_to_string
 from re import search
 from requests.adapters import ConnectionError
 from config import constants
 from utils import ebay_trading_api, amazon_products_api, logger
 from .helpers import get_item_price_info
-from .parsers import get_rank_from_response, get_delivery_time, get_ebay_price_from_response
-from .models import Pair
+from .models import Pair, NotAllowedSeller
+
+from .parsers import (
+    get_rank_from_response, get_delivery_time, get_ebay_price_from_response, get_seller_id_from_response
+)
 
 
 class PairForm(forms.ModelForm):
@@ -31,37 +35,19 @@ class PairForm(forms.ModelForm):
         self.fields['asin'].label = 'ASIN'
         self.fields['ebay_ids'].label = 'eBay ids'
 
-        self.fields['asin'].help_text = '''
-                                        <ul>
-                                            <li>Required.</li>
-                                            <li>Possible length: {0}.</li>
-                                            <li>Item sales rank should be lower or equal than {1}.</li>
-                                        </ul>
-                                        
-                                        The minimum benefit from the item should be no less than the Amazon price 
-                                        minus {2}$. 
-                                        <a href="/profits/" target="_blank">Profits coefficients for all intervals</a>.
-                                        '''.format(constants.asin_length, constants.amazon_max_salesrank,
-                                                   constants.profit_buffer)
+        self.fields['asin'].help_text = render_to_string('asin_help_text.html', {
+            'asin_length': constants.asin_length,
+            'amazon_max_salesrank': constants.amazon_max_salesrank,
+            'profit_buffer': constants.profit_buffer
+        })
 
-        self.fields['ebay_ids'].help_text = '''
-                            <ul>
-                                <li>Required.</li>
-                                <li>All ids should be unique.</li>
-                                <li>Please, split ids by '<b>;</b>' delimiter.</li>
-                                <li>Don’t put delimiter after last id.</li>
-                                <li>One id length: {0}.</li>
-                                <li>Maximum ids count: {1}.</li>
-                                <li>Seller should accepts return for all items.</li>
-                                <li>Feedback score should be greater than {3}.</li>
-                                <li>Positive feedback percentage should be greater than {4}%.</li>
-                                <li>High end of delivery time for all items should be lower or equal than {2} days.</li>
-                            </ul>
-                            
-                            For example: 123456789123;987654321987
-                            '''.format(constants.ebay_id_length, constants.ebay_ids_max_count,
-                                       constants.ebay_max_delivery_time, constants.ebay_min_feedback_score,
-                                       constants.ebay_min_positive_percentage)
+        self.fields['ebay_ids'].help_text = render_to_string('ebay_ids_help_text.html', {
+            'ebay_ids_length': constants.ebay_id_length,
+            'ebay_ids_max_count': constants.ebay_ids_max_count,
+            'ebay_min_feedback_score': constants.ebay_min_feedback_score,
+            'ebay_min_positive_percentage': constants.ebay_min_positive_percentage,
+            'ebay_max_delivery_time': constants.ebay_max_delivery_time
+        })
 
     def check_profit(self):
         """ Check minimum profit for asin and all eBay ids and calculate approximate price for Amazon """
@@ -223,6 +209,8 @@ class PairForm(forms.ModelForm):
                 'ebay_ids': 'Your input string contains more than {0} ids.'.format(constants.ebay_ids_max_count)
             }, code='eb5')
 
+        blacklist = [na_seller.ebay_user_id for na_seller in NotAllowedSeller.objects.all()]
+
         for ebay_id in ebay_ids_split:
             if len(ebay_id) != constants.ebay_id_length:
                 raise forms.ValidationError({
@@ -304,6 +292,15 @@ class PairForm(forms.ModelForm):
                         'ebay_ids': 'Delivery time for this item ({0}) is greater than {1} days.'
                         .format(ebay_id, constants.ebay_max_delivery_time)
                     }, code='eb13')
+
+                # check for item seller status
+
+                seller = get_seller_id_from_response(response)
+
+                if seller in blacklist:
+                    raise forms.ValidationError({
+                        'ebay_ids': 'Seller of this item ({0}) is in blacklist.'.format(ebay_id)
+                    }, code='eb18')
 
                 # getting eBay price
 

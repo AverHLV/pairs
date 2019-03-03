@@ -96,7 +96,7 @@ class Pair(TimeStamped):
         db_table = 'pairs'
 
     def __str__(self):
-        return str(self.asin)
+        return self.asin
 
     def set_buybox_status(self, status, commit=True):
         self.is_buybox_winner = status
@@ -193,7 +193,7 @@ class Order(TimeStamped):
         db_table = 'orders'
 
     def __str__(self):
-        return str(self.order_id)
+        return self.order_id
 
     def get_items(self):
         return self.items.all()
@@ -241,3 +241,13 @@ class Order(TimeStamped):
                 return self.owners_profits[owner]
 
             return [(owner, self.owners_profits[owner]) for owner in self.owners_profits.keys()]
+
+
+class NotAllowedSeller(models.Model):
+    """ Model for not allowed seller from eBay """
+
+    ebay_user_id = models.CharField(max_length=constants.na_seller_id_length)
+    objects = models.Manager()
+
+    def __str__(self):
+        return self.ebay_user_id

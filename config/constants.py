@@ -31,6 +31,7 @@ ebay_ids_max_count = 4
 reason_message_max_length = 100
 owner_on_delete_id = 1
 order_id_length = 19
+na_seller_id_length = 50
 
 # pairs views
 on_page_obj_number = 40

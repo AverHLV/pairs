@@ -7,6 +7,7 @@ urlpatterns = [
     path('checked/<int:pair_id>/<int:result>/<str:reason>/', views.mark_as_checked),
     path('page/<int:__>/checked/<int:pair_id>/<int:result>/<str:reason>/', views.mark_as_checked),
     path('profits/', views.profits_table),
+    path('blacklist/', views.na_sellers_table),
     path('add_pair/', views.add_pair),
     path('change_pair/<int:pair_id>/', views.change_pair),
     path('search/', views.search_for),

@@ -1,0 +1,22 @@
+{% extends 'main.html' %}
+{% block content %}
+    <div class="row"><div class="column">
+        {% if sellers %}
+            <table>
+                <tr>
+                    <th>eBay UserID</th>
+                </tr>
+
+                {% for seller in sellers %}
+                    <tr>
+                        <td>{{ seller.ebay_user_id }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <br>
+            <big>The items of these sellers will not be added.</big>
+        {% else %}
+            <big>Seller blacklist is empty</big>
+        {% endif %}
+    </div></div>
+{% endblock %}
