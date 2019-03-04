@@ -68,12 +68,7 @@ def get_item_price_info(asins, logger, delay=0.5):
 
         # save info from response to price_info list
 
-        try:
-            get_buybox_price_from_response(price_info, response)
-
-        except TypeError:
-            logger.critical('TypeError for asins: {0}'.format(price_info))
-            continue
+        get_buybox_price_from_response(price_info, response)
 
         # get price info for no-buybox items
 

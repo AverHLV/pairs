@@ -170,21 +170,52 @@ def get_buybox_price_from_response(price_info, response):
 
     def fill_price_info(index):
         try:
-            price = float(comp_price_dict['Price']['LandedPrice']['Amount']['value'])
+            comp_price_dict[0]
 
-        except (KeyError, ValueError):
+        except KeyError:
             try:
-                price = float(comp_price_dict['Price']['ListingPrice']['Amount']['value'])
+                price = float(comp_price_dict['Price']['LandedPrice']['Amount']['value'])
 
             except (KeyError, ValueError):
-                price = 0
+                try:
+                    price = float(comp_price_dict['Price']['ListingPrice']['Amount']['value'])
 
-        price_info[index].append(price)
+                except (KeyError, ValueError):
+                    price = 0
 
-        if comp_price_dict['belongsToRequester']['value'] == 'true':
-            price_info[index].append(True)
+            price_info[index].append(price)
+
+            if comp_price_dict['belongsToRequester']['value'] == 'true':
+                price_info[index].append(True)
+            else:
+                price_info[index].append(False)
+
         else:
-            price_info[index].append(False)
+            actual_comp_price = None
+
+            for comp_price in comp_price_dict:
+                if comp_price['CompetitivePriceId']['value'] == '1':
+                    actual_comp_price = comp_price
+
+            if actual_comp_price is None:
+                actual_comp_price = comp_price_dict[0]
+
+            try:
+                price = float(actual_comp_price['Price']['LandedPrice']['Amount']['value'])
+
+            except (KeyError, ValueError):
+                try:
+                    price = float(actual_comp_price['Price']['ListingPrice']['Amount']['value'])
+
+                except (KeyError, ValueError):
+                    price = 0
+
+            price_info[index].append(price)
+
+            if actual_comp_price['belongsToRequester']['value'] == 'true':
+                price_info[index].append(True)
+            else:
+                price_info[index].append(False)
 
     # parse response
 
