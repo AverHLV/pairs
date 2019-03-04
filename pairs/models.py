@@ -13,16 +13,6 @@ shipping_info_fields = (
 )
 
 
-class PairsManager(models.Manager):
-    @staticmethod
-    def lowest_price_pairs():
-        """ Return pairs with lowest possible prices """
-
-        pairs = Pair.objects.all()
-        unnecessary_pairs_ids = [pair.id for pair in pairs if pair.amazon_current_price != pair.amazon_minimum_price]
-        return pairs.exclude(id__in=unnecessary_pairs_ids)
-
-
 class OrdersManager(models.Manager):
     @staticmethod
     def user_orders(username):
@@ -90,7 +80,7 @@ class Pair(TimeStamped):
     amazon_current_price = models.FloatField(default=0)
     is_buybox_winner = models.BooleanField(default=False)
     reason_message = models.CharField(max_length=constants.reason_message_max_length, blank=True)
-    objects = PairsManager()
+    objects = models.Manager()
 
     class Meta:
         db_table = 'pairs'

@@ -1,5 +1,6 @@
 from django.db import models
-from datetime import datetime, timedelta
+from django.utils.timezone import get_current_timezone
+from datetime import datetime
 
 
 class RepricerStats(models.Model):
@@ -24,10 +25,10 @@ class RepricerStats(models.Model):
         from pairs.models import Pair
 
         self.buybox_count = len(Pair.objects.filter(is_buybox_winner=True))
-        self.min_price_count = len(Pair.objects.lowest_price_pairs())
+        self.min_price_count = len(Pair.objects.filter(amazon_current_price=models.F('amazon_minimum_price')))
         self.save()
 
     def get_time_str(self):
         """ Get object created time in format 'hours: minutes' """
 
-        return datetime.strftime(self.created + timedelta(hours=2), '%H:%M')
+        return datetime.strftime(self.created.astimezone(get_current_timezone()), '%H:%M')
