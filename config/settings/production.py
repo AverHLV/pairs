@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'pairs',
     'stats',
-    'buyer',
     'users',
     'logs',
     'repricer'
