@@ -82,7 +82,6 @@ class Pair(TimeStamped):
     amazon_current_price = models.FloatField(default=0)
     is_buybox_winner = models.BooleanField(default=False)
     reason_message = models.CharField(max_length=constants.reason_message_max_length, blank=True)
-    objects = models.Manager()
 
     class Meta:
         db_table = 'pairs'
