@@ -22,6 +22,38 @@ SECRET_KEY = secret_dict['secret_key']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+# Logging configuration
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'simple_formatter': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        'file_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'main.log',
+            'formatter': 'simple_formatter',
+            'maxBytes': 104857600
+        },
+    },
+
+    'loggers': {
+        'django': {
+            'handlers': ['file_handler'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
 # Admins contacts
 ADMINS = [(admin['name'], admin['email']) for admin in secret_dict['admins']]
 

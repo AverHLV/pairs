@@ -1,9 +1,10 @@
+import logging
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from requests.adapters import ConnectionError
 from users.models import CustomUser
 from config import constants
-from utils import ebay_trading_api, logger
+from utils import ebay_trading_api
 from .parsers import get_ebay_quantity_from_response
 
 
@@ -11,6 +12,8 @@ shipping_info_fields = (
     'Name', 'AddressLine1', 'AddressLine2', 'AddressLine3', 'City', 'County', 'District', 'StateOrRegion', 'PostalCode',
     'CountryCode', 'Phone', 'AddressType'
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OrdersManager(models.Manager):

@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth import login
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.sites.shortcuts import get_current_site
@@ -12,10 +13,12 @@ from django.core.mail import send_mail
 from django.core.exceptions import ObjectDoesNotExist
 from smtplib import SMTPException
 from config import constants
-from utils import secret_dict, logger
+from utils import secret_dict
 from .tokens import account_activation_token, password_reset_token
 from .models import CustomUser, Note
 from .forms import SignUpForm, PasswordResetForm, NoteForm
+
+logger = logging.getLogger(__name__)
 
 
 def signup(request):

@@ -1,3 +1,4 @@
+import logging
 from django.utils.timezone import get_current_timezone
 from urllib.request import urlopen
 from urllib.error import URLError
@@ -5,7 +6,8 @@ from lxml.etree import fromstring, HTMLParser
 from re import search
 from datetime import datetime
 from config.constants import ebay_delivery_months
-from utils import logger
+
+logger = logging.getLogger(__name__)
 
 
 def get_rank_from_response(response):
