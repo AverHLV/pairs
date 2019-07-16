@@ -1,4 +1,3 @@
-import logging
 from ebaysdk.trading import Connection as Trading
 from ebaysdk.shopping import Connection as Shopping
 from ebaysdk.exception import ConnectionError
@@ -33,18 +32,6 @@ def get_secret(filename):
 
     except KeyError as k:
         raise ImproperlyConfigured('Add the {0} field to json secret'.format(k))
-
-
-class Logger(object):
-    def __init__(self, logger_name):
-        logging.basicConfig(format='%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s] %(message)s',
-                            level=logging.WARNING, filename=logger_name + '.log')
-
-        self.logger = logging.getLogger(logger_name)
-        self.critical = logging.critical
-        self.warning = logging.warning
-        self.debug = logging.debug
-        self.info = logging.info
 
 
 class ApiCallsChecker(object):
@@ -285,7 +272,6 @@ amazon_feeds_api = ApiObject(secret_dict, 'amazon-feeds', feed_types=constants.a
                              country=constants.amazon_region)
 
 # helpers
-logger = Logger('main')
 xml_quantity_helper = XmlHelper((constants.xml_header_filename, constants.xml_message_quantity_filename),
                                 secret_dict['am_seller_id'], message_type='quantity')
 xml_product_helper = XmlHelper((constants.xml_header_filename, constants.xml_message_product_filename),

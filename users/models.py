@@ -70,7 +70,6 @@ class Note(models.Model):
     text = models.TextField()
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
-    objects = models.Manager()
 
     class Meta:
         db_table = 'notes'

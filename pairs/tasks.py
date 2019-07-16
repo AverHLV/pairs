@@ -1,5 +1,4 @@
 from django.utils.timezone import get_current_timezone
-from django.core.exceptions import ObjectDoesNotExist
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from datetime import datetime, timedelta
@@ -606,7 +605,7 @@ def process_order(order):
         try:
             item = Pair.objects.get(asin=response_order.parsed['OrderItems']['OrderItem']['ASIN']['value'])
 
-        except ObjectDoesNotExist:
+        except Pair.DoesNotExist:
             return
 
         quantity = int(response_order.parsed['OrderItems']['OrderItem']['QuantityOrdered']['value'])
@@ -626,7 +625,7 @@ def process_order(order):
             try:
                 item = Pair.objects.get(asin=item['ASIN']['value'])
 
-            except ObjectDoesNotExist:
+            except Pair.DoesNotExist:
                 pass
 
             else:

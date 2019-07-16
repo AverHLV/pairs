@@ -1,15 +1,20 @@
+import logging
+
 from django import forms
 from django.template.loader import render_to_string
+
 from re import search
 from requests.adapters import ConnectionError
+
 from config import constants
-from utils import ebay_trading_api, amazon_products_api, logger
+from utils import ebay_trading_api, amazon_products_api
 from .helpers import get_item_price_info
 from .models import Pair, NotAllowedSeller
-
 from .parsers import (
     get_rank_from_response, get_delivery_time, get_ebay_price_from_response, get_seller_id_from_response
 )
+
+logger = logging.getLogger(constants.logger_name)
 
 
 class PairForm(forms.ModelForm):

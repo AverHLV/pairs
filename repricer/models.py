@@ -9,7 +9,6 @@ class RepricerStats(models.Model):
     buybox_count = models.PositiveSmallIntegerField(default=0)
     min_price_count = models.PositiveSmallIntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
-    objects = models.Manager()
 
     class Meta:
         db_table = 'repricerstats'

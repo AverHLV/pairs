@@ -1,16 +1,18 @@
+import logging
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from requests.adapters import ConnectionError
 from users.models import CustomUser
 from config import constants
-from utils import ebay_trading_api, logger
+from utils import ebay_trading_api
 from .parsers import get_ebay_quantity_from_response
-
 
 shipping_info_fields = (
     'Name', 'AddressLine1', 'AddressLine2', 'AddressLine3', 'City', 'County', 'District', 'StateOrRegion', 'PostalCode',
     'CountryCode', 'Phone', 'AddressType'
 )
+
+logger = logging.getLogger(constants.logger_name)
 
 
 class OrdersManager(models.Manager):
@@ -80,7 +82,6 @@ class Pair(TimeStamped):
     amazon_current_price = models.FloatField(default=0)
     is_buybox_winner = models.BooleanField(default=False)
     reason_message = models.CharField(max_length=constants.reason_message_max_length, blank=True)
-    objects = models.Manager()
 
     class Meta:
         db_table = 'pairs'

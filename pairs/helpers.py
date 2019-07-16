@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from re import fullmatch
 from time import sleep
 from config import constants
@@ -31,7 +30,7 @@ def pairs_search(search_term, user):
         try:
             owner = CustomUser.objects.get(username=search_term)
 
-        except ObjectDoesNotExist:
+        except CustomUser.DoesNotExist:
             return Pair.objects.none()
 
         queryset = Pair.objects.filter(owner=owner)

@@ -1,3 +1,4 @@
+import logging
 from django.contrib.auth import login
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.sites.shortcuts import get_current_site
@@ -9,13 +10,14 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.template.context_processors import csrf
 from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
 from smtplib import SMTPException
 from config import constants
-from utils import secret_dict, logger
+from utils import secret_dict
 from .tokens import account_activation_token, password_reset_token
 from .models import CustomUser, Note
 from .forms import SignUpForm, PasswordResetForm, NoteForm
+
+logger = logging.getLogger(constants.logger_name)
 
 
 def signup(request):
@@ -98,7 +100,7 @@ def reset_password_confirm(request, uidb64, token):
         uid = force_text(urlsafe_base64_decode(uidb64))
         user = CustomUser.objects.get(pk=uid)
 
-    except (TypeError, ValueError, OverflowError, ObjectDoesNotExist):
+    except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
         user = None
 
     if user is not None and password_reset_token.check_token(user, token):
@@ -116,7 +118,7 @@ def reset_password_input(request, uid):
     try:
         user = CustomUser.objects.get(pk=uid)
 
-    except ObjectDoesNotExist:
+    except CustomUser.DoesNotExist:
         return render(request, 'message.html', {'message': 'User ID is invalid.'})
 
     context = {'form': SetPasswordForm(user), 'action': '/auth/reset/change/{0}/'.format(uid),
@@ -162,7 +164,7 @@ def activate(request, uidb64, token):
         uid = force_text(urlsafe_base64_decode(uidb64))
         user = CustomUser.objects.get(pk=uid)
 
-    except (TypeError, ValueError, OverflowError, ObjectDoesNotExist) as e:
+    except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist) as e:
         logger.warning('Account activation error: {0}. For user: {1}'.format(e, request.user.username))
         user = None
 

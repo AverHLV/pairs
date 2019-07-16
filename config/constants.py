@@ -1,27 +1,34 @@
+from django.core.exceptions import ImproperlyConfigured
 from unipath import Path
 from os import name as os_name
 from math import inf
 
-# file paths
-base_dir = Path(__file__).ancestor(2)
-secret_filename = base_dir.child('config').child('secret.json')
-xml_header_filename = base_dir.child('templates_xml').child('header.xml')
-xml_message_quantity_filename = base_dir.child('templates_xml').child('message_quantity.xml')
-xml_message_product_filename = base_dir.child('templates_xml').child('message_product.xml')
-xml_message_price_filename = base_dir.child('templates_xml').child('message_price.xml')
-xml_message_delete_product_filename = base_dir.child('templates_xml').child('message_delete_product.xml')
+try:
+    # file paths
+    base_dir = Path(__file__).ancestor(2)
+    secret_filename = base_dir.child('config').child('secret.json')
+    xml_header_filename = base_dir.child('templates_xml').child('header.xml')
+    xml_message_quantity_filename = base_dir.child('templates_xml').child('message_quantity.xml')
+    xml_message_product_filename = base_dir.child('templates_xml').child('message_product.xml')
+    xml_message_price_filename = base_dir.child('templates_xml').child('message_price.xml')
+    xml_message_delete_product_filename = base_dir.child('templates_xml').child('message_delete_product.xml')
 
-# logs paths
+    # logs paths
 
-if os_name == 'nt':
-    default_log_path = base_dir.ancestor(1).child('logs').child('default_err.log')
-    workflow_log_path = base_dir.ancestor(1).child('logs').child('workflow_err.log')
-    repricer_log_path = base_dir.ancestor(1).child('logs').child('repricer_err.log')
+    if os_name == 'nt':
+        default_log_path = base_dir.ancestor(1).child('logs').child('default_err.log')
+        workflow_log_path = base_dir.ancestor(1).child('logs').child('workflow_err.log')
+        repricer_log_path = base_dir.ancestor(1).child('logs').child('repricer_err.log')
 
-else:
-    default_log_path = '/home/aver/logs/celery/default_err.log'
-    workflow_log_path = '/home/aver/logs/celery/workflow_err.log'
-    repricer_log_path = '/home/aver/logs/celery/repricer_err.log'
+    else:
+        default_log_path = '/home/aver/logs/celery/default_err.log'
+        workflow_log_path = '/home/aver/logs/celery/workflow_err.log'
+        repricer_log_path = '/home/aver/logs/celery/repricer_err.log'
+
+except IOError as e:
+    raise ImproperlyConfigured('Path error: {0}'.format(e))
+
+logger_name = 'custom'
 
 # pairs models
 asin_length = 10

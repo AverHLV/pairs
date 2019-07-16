@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.core.exceptions import ObjectDoesNotExist
 from .models import CustomUser, Note
 
 
@@ -23,7 +22,7 @@ class PasswordResetForm(forms.Form):
         try:
             self.user = CustomUser.objects.get(username=self.cleaned_data['username'])
 
-        except ObjectDoesNotExist:
+        except CustomUser.DoesNotExist:
             raise forms.ValidationError('This user does not exist')
 
 

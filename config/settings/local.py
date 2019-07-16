@@ -22,6 +22,44 @@ SECRET_KEY = secret_dict['secret_key']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Logging configuration
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'simple_formatter': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+
+    'handlers': {
+        'file_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'main.log',
+            'formatter': 'simple_formatter',
+            'maxBytes': 104857600
+        }
+    },
+
+    'loggers': {
+        'django': {
+            'handlers': ['file_handler'],
+            'level': 'INFO',
+            'propagate': True
+        },
+
+        'custom': {
+            'handlers': ['file_handler'],
+            'level': 'INFO',
+            'propagate': True
+        }
+    }
+}
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -35,7 +73,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'pairs',
     'stats',
-    'buyer',
     'users',
     'logs',
     'repricer'
