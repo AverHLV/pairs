@@ -4,6 +4,3 @@ site
 *.log
 run_*.py
 start.bat
-chromedriver
-chromedriver.exe
-mkdocs.yml
