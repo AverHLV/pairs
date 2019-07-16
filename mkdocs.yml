@@ -1,0 +1,5 @@
+site_name: AE Pairs documentation
+theme: readthedocs
+nav:
+    - Home: index.md
+    - About: about.md
