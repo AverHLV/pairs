@@ -2,12 +2,12 @@ import logging
 from django.utils.timezone import get_current_timezone
 from urllib.request import urlopen
 from urllib.error import URLError
-from lxml.etree import fromstring, HTMLParser
+from lxml.html import fromstring, HTMLParser
 from re import search
 from datetime import datetime
-from config.constants import ebay_delivery_months
+from config.constants import ebay_delivery_months, logger_name
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(logger_name)
 
 
 def get_rank_from_response(response):
@@ -354,7 +354,7 @@ def get_amazon_upc(asin):
         logger.warning('URLError while getting upc: {0}'.format(e))
         return
 
-    tree = fromstring(response, HTMLParser())
+    tree = fromstring(response, parser=HTMLParser())
     upc = tree.xpath(location)
 
     if not len(upc):
@@ -445,7 +445,7 @@ def get_delivery_time(ebay_id):
 
     # find and parse date string in html response
 
-    tree = fromstring(response, HTMLParser())
+    tree = fromstring(response, parser=HTMLParser())
 
     for location in possible_locations:
         date = tree.xpath(location)

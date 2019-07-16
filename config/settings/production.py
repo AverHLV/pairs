@@ -42,16 +42,22 @@ LOGGING = {
             'filename': 'main.log',
             'formatter': 'simple_formatter',
             'maxBytes': 104857600
-        },
+        }
     },
 
     'loggers': {
         'django': {
             'handlers': ['file_handler'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': True
         },
-    },
+
+        'custom': {
+            'handlers': ['file_handler'],
+            'level': 'INFO',
+            'propagate': True
+        }
+    }
 }
 
 # Admins contacts
