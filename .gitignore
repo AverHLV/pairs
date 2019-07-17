@@ -1,6 +1,7 @@
 migrations
 site
-*.json
-*.log
+buyer_secret.json
+secre*.json
 run_*.py
 start.bat
+main.log
