@@ -1,43 +1,37 @@
 import mmap
-from os.path import getsize
 from os import name as os_name
 
 
-def tail(filename, n=50):
-    """ Returns last n lines from the file """
+def tail(filename, n=-1):
+    """ Return last n lines from the file """
 
     try:
-        size = getsize(filename)
+        with open(filename, 'rb') as file:
+            if os_name == 'nt':
+                # Windows mmap
+
+                filemap = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
+            else:
+                # *nix mmap
+
+                filemap = mmap.mmap(file.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_READ)
+
+            strings = []
+
+            try:
+                strings = filemap[:].splitlines()
+
+                if n != -1:
+                    strings = strings[len(strings) - n:len(strings)]
+
+                strings = [str(string)[2:-1] for string in strings]
+
+            finally:
+                filemap.close()
+                return strings
 
     except IOError:
         raise ValueError('Specified file not found: {0}'.format(filename))
-
-    with open(filename, 'rb') as file:
-        if os_name == 'nt':
-            # Windows mmap
-
-            filemap = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-        else:
-            # *nix mmap
-
-            filemap = mmap.mmap(file.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_READ)
-
-        i = 0
-        strings = []
-
-        try:
-            for i in range(size - 1, -1, -1):
-                if filemap[i] == '\n':
-                    n -= 1
-
-                    if n == -1:
-                        break
-
-            strings = [str(string)[2:-1] for string in filemap[i + 1 if i else 0:].splitlines()]
-
-        finally:
-            filemap.close()
-            return strings
 
 
 def process_log_strings(strings):

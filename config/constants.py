@@ -5,7 +5,7 @@ from math import inf
 
 try:
     # file paths
-    base_dir = Path(__file__).ancestor(2)
+    base_dir = Path(__file__).absolute().ancestor(2)
     secret_filename = base_dir.child('config').child('secret.json')
     xml_header_filename = base_dir.child('templates_xml').child('header.xml')
     xml_message_quantity_filename = base_dir.child('templates_xml').child('message_quantity.xml')
@@ -29,6 +29,7 @@ except IOError as e:
     raise ImproperlyConfigured('Path error: {0}'.format(e))
 
 logger_name = 'custom'
+load_encoding = 'utf8'
 
 # pairs models
 asin_length = 10
@@ -55,7 +56,7 @@ failure_reasons = {
 # pairs forms
 amazon_max_salesrank = 500000
 ebay_max_delivery_time = 9  # days
-ebay_min_feedback_score = 500
+ebay_min_feedback_score = 1000
 ebay_min_positive_percentage = 98.0
 profit_percentage = 0.85
 profit_buffer = 1
