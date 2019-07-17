@@ -17,7 +17,7 @@ def users(request):
     """ Users stats page """
 
     return render(request, 'users.html', {
-        'users': CustomUser.objects.order_by('username'),
+        'users': CustomUser.objects.filter(is_active=True).order_by('username'),
         'pair_min': constants.pair_minimum
     })
 
@@ -31,7 +31,7 @@ def graphs(request):
     current_time = datetime.now(get_current_timezone()).replace(hour=0, minute=0, second=0, microsecond=0)
     orders = Order.objects.filter(created__gte=current_time.replace(day=1))
 
-    for user in CustomUser.objects.order_by('username'):
+    for user in CustomUser.objects.filter(is_active=True).order_by('username'):
         usernames.append(user.username)
         profits.append(user.profit)
         ordernumbers.append([True for order in orders if user.username in order.get_owners_names()].count(True))
