@@ -4,19 +4,15 @@ Hi! This is a report of users activity over the past month.
     <tr>
         <th>User</th>
         <th>Profit</th>
+        <th>Relative profit</th>
         <th>Pairs count</th>
     </tr>
 
     {% for user in users %}
         <tr>
             <td>{{ user.username }}</td>
-
-            {% if not user.profit_level %}
-                <td>{{ user.get_relative_profit }}</td>
-            {% else %}
-                <td>{{ user.profit }}</td>
-            {% endif %}
-
+            <td>{{ user.profit }}</td>
+            <td>{{ user.get_relative_profit }}</td>
             <td>{{ user.pairs_count }} / {{ pair_min }}</td>
         </tr>
     {% endfor %}
