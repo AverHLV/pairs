@@ -16,7 +16,7 @@ def update_stats():
     """ Send monthly users statistics report and update this stats for new month """
 
     html_message = render_to_string('stats_email.html', {
-        'users': CustomUser.objects.order_by('username'),
+        'users': CustomUser.objects.filter(is_active=True).order_by('username'),
         'pair_min': pair_minimum,
         'gen_date': datetime.now().date()
     })
