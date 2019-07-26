@@ -100,7 +100,7 @@ repricer_stats_days = 1
 # users models
 
 profit_percent = [
-    {'mine': 0.3, 1: 0.1, 2: 0.3},
+    {'mine': 0.3, 1: 0.3},
     {'mine': 1}
 ]
 
