@@ -1,7 +1,6 @@
 migrations
 site
-buyer_secret.json
-secre*.json
+*.json
 run_*.py
 start.bat
 main.log
