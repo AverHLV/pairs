@@ -223,9 +223,6 @@ class PairForm(forms.ModelForm):
                     .format(constants.ebay_id_length)
                 }, code='eb6')
 
-            if Pair.objects.filter(ebay_ids__contains=ebay_id).exists():
-                raise forms.ValidationError({'ebay_ids': 'This id ({0}) already exists.'.format(ebay_id)}, code='eb7')
-
             # validation based on api response
 
             '''
