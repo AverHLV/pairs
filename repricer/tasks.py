@@ -24,7 +24,7 @@ def calc_current_prices():
 
 
 @shared_task(name='Repricer')
-def reprice():
+def reprice(strategy=1):
     """ Create reprice configuration for in-inventory items and submit it """
 
     from pairs.models import Pair
@@ -47,11 +47,14 @@ def reprice():
 
         # change price if too low
 
+        minimum_price_granted = False
+
         if not price:
             price = pair.amazon_approximate_price
 
         elif price < pair.amazon_minimum_price:
             price = pair.amazon_minimum_price
+            minimum_price_granted = True
 
         # actions according to the BuyBox status
 
@@ -59,6 +62,9 @@ def reprice():
             # if no BuyBox
 
             if price != pair.amazon_current_price:
+                if strategy == 1 and not minimum_price_granted:
+                    price -= 0.01
+
                 prices.append((pair.asin, price))
 
             else:
@@ -75,6 +81,13 @@ def reprice():
             # if no BuyBox winner
 
             if pair.is_buybox_winner and price < pair.amazon_current_price:
+                if strategy == 1 and not minimum_price_granted:
+                    price -= 0.01
+
+                prices.append((pair.asin, price))
+
+            elif strategy == 1 and pair.is_buybox_winner and price == pair.amazon_current_price:
+                price -= 0.01
                 prices.append((pair.asin, price))
 
             elif pair.is_buybox_winner and price >= pair.amazon_current_price:
@@ -85,6 +98,9 @@ def reprice():
                 # if no BuyBox winner earlier
 
                 if price != pair.amazon_current_price:
+                    if strategy == 1 and not minimum_price_granted:
+                        price -= 0.01
+
                     prices.append((pair.asin, price))
 
                 else:
