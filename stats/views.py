@@ -106,7 +106,7 @@ def graphs(request):
     plt.plot(dates, buybox_counts, c='g')
     plt.plot(dates, minimum_price_counts, c='b')
     plt.xticks(range(len(dates)), labels=dates)
-    plt.yticks(range(max(max(buybox_counts), max(minimum_price_counts))))
+    plt.yticks(range(max(max(buybox_counts), max(minimum_price_counts)) + 1))
     plt.legend(['BB count', 'LP count'])
     plt.xlabel('Time')
     plt.title('Repricer stats')
