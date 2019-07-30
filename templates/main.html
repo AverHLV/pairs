@@ -37,14 +37,15 @@
                     <li><a href="/">Home</a></li>
                     <li><a href="/auth/logout/">Log out ({{ request.user.username }})</a></li>
 
+                    <li><a href="/add_pair/">Add pair</a></li>
+                    <li><a href="/orders/">Orders</a></li>
+
                     {% if request.user.is_moderator %}
-                        <li><a href="/stats/">Graphs</a></li>
                         <li><a href="/stats/users/">Users stats</a></li>
+                        <li><a href="/stats/">Graphs</a></li>
                     {% endif %}
 
-                    <li><a href="/add_pair/">Add pair</a></li>
                     <li><a href="/search/">Search</a></li>
-                    <li><a href="/orders/">Orders</a></li>
                     <li><a href="/auth/notes/">Notes</a></li>
                     <li><a href="/auth/notes/add_note/">Add note</a></li>
                 </ul>

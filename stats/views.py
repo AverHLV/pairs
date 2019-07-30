@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from mpld3 import fig_to_html, plugins
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import get_current_timezone
+
 from datetime import datetime, timedelta
+
 from decorators import moderator_required
 from config import constants
 from pairs.models import Order
@@ -91,7 +94,7 @@ def graphs(request):
     fig4 = plt.figure()
 
     stats = RepricerStats.objects.filter(created__gte=datetime.now(get_current_timezone()) - timedelta(
-        days=constants.repricer_stats_days))
+        hours=constants.repricer_stats_hours))
 
     buybox_counts, minimum_price_counts, dates = [], [], []
 
@@ -100,9 +103,10 @@ def graphs(request):
         minimum_price_counts.append(stat.min_price_count)
         dates.append(stat.get_time_str())
 
-    line3 = plt.plot(dates, buybox_counts, c='g', marker='o')
-    line4 = plt.plot(dates, minimum_price_counts, c='b', marker='s')
+    plt.plot(dates, buybox_counts, c='g')
+    plt.plot(dates, minimum_price_counts, c='b')
     plt.xticks(range(len(dates)), labels=dates)
+    plt.yticks(range(max(max(buybox_counts), max(minimum_price_counts))))
     plt.legend(['BB count', 'LP count'])
     plt.xlabel('Time')
     plt.title('Repricer stats')
@@ -113,14 +117,11 @@ def graphs(request):
 
     labels1 = ['count: {0}'.format(x) for x in ordercounts]
     labels2 = ['profit: {0}'.format(x) for x in orderprofits]
-    labels3 = ['BB count: {0}'.format(x) for x in buybox_counts]
-    labels4 = ['LP count: {0}'.format(x) for x in minimum_price_counts]
+
     tooltip1 = plugins.PointHTMLTooltip(line1[0], labels1)
     tooltip2 = plugins.PointHTMLTooltip(line2[0], labels2)
-    tooltip3 = plugins.PointHTMLTooltip(line3[0], labels3)
-    tooltip4 = plugins.PointHTMLTooltip(line4[0], labels4)
+
     plugins.connect(fig3, tooltip1, tooltip2)
-    plugins.connect(fig4, tooltip3, tooltip4)
 
     return render(request, 'graphs.html', {
         'figure1': fig_to_html(fig1),
