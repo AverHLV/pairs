@@ -96,18 +96,20 @@ def graphs(request):
     stats = RepricerStats.objects.filter(created__gte=datetime.now(get_current_timezone()) - timedelta(
         hours=constants.repricer_stats_hours))
 
-    buybox_counts, minimum_price_counts, dates = [], [], []
+    if len(stats):
+        buybox_counts, minimum_price_counts, dates = [], [], []
 
-    for stat in stats:
-        buybox_counts.append(stat.buybox_count)
-        minimum_price_counts.append(stat.min_price_count)
-        dates.append(stat.get_time_str())
+        for stat in stats:
+            buybox_counts.append(stat.buybox_count)
+            minimum_price_counts.append(stat.min_price_count)
+            dates.append(stat.get_time_str())
 
-    plt.plot(dates, buybox_counts, c='g')
-    plt.plot(dates, minimum_price_counts, c='b')
-    plt.xticks(range(len(dates)), labels=dates)
-    plt.yticks(range(max(max(buybox_counts), max(minimum_price_counts)) + 1))
-    plt.legend(['BB count', 'LP count'])
+        plt.plot(dates, buybox_counts, c='g')
+        plt.plot(dates, minimum_price_counts, c='b')
+        plt.xticks(range(len(dates)), labels=dates)
+        plt.yticks(range(max(max(buybox_counts), max(minimum_price_counts)) + 1))
+        plt.legend(['BB count', 'LP count'])
+
     plt.xlabel('Time')
     plt.title('Repricer stats')
 
