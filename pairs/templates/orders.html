@@ -28,15 +28,15 @@
                     <tr>
                         <th>Order ID</th>
                         <th>Date</th>
-                        <th>Shipping info</th>
 
                         {% if request.user.is_moderator %}
+                            <th>Shipping info</th>
                             <th>Amazon</th>
                             <th>eBay</th>
                             <th>Income</th>
-                            <th>Items</th>
                         {% endif %}
 
+                        <th>Items</th>
                         <th>Profit</th>
                     </tr>
 
@@ -70,35 +70,35 @@
 
                             <td>{{ order.purchase_date }}</td>
 
-                            <td>
-                                {% if order.shipping_info %}
-                                    <div class="filter">
-                                        <details>
-                                            <summary>Details</summary>
-
-                                            <table>
-                                                <tr>
-                                                    <th>Field</th>
-                                                    <th>Value</th>
-                                                </tr>
-
-                                                {% for field in order.shipping_info|sort_json %}
-                                                    <tr>
-                                                        <td>{{ field|list_item:1 }}</td>
-                                                        <td>{{ field|list_item:0 }}</td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </table>
-                                        </details>
-                                    </div>
-
-                                {% else %}
-                                    No info
-
-                                {% endif %}
-                            </td>
-
                             {% if request.user.is_moderator %}
+                                <td>
+                                    {% if order.shipping_info %}
+                                        <div class="filter">
+                                            <details>
+                                                <summary>Details</summary>
+
+                                                <table>
+                                                    <tr>
+                                                        <th>Field</th>
+                                                        <th>Value</th>
+                                                    </tr>
+
+                                                    {% for field in order.shipping_info|sort_json %}
+                                                        <tr>
+                                                            <td>{{ field|list_item:1 }}</td>
+                                                            <td>{{ field|list_item:0 }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </table>
+                                            </details>
+                                        </div>
+
+                                    {% else %}
+                                        No info
+
+                                    {% endif %}
+                                </td>
+
                                 <td>{{ order.amazon_price|floatformat:2 }}$</td>
 
                                 {% if not order.all_set %}
@@ -160,6 +160,31 @@
                                 {% endif %}
 
                             {% else %}
+                                <td><table>
+                                    {% for item in order.items.all %}
+                                        {% if item.owner.username == request.user.username %}
+                                            <tr>
+                                                {% define "https://www.amazon.com/dp/"|addstr:item|addstr:"/" as am_link %}
+                                                <td>
+                                                    <a href="{{ am_link }}" target="_blank">{{ item }}</a>
+
+                                                    <span title="Item quantity in this order">
+                                                        {% define item.id|stringformat:"i" as item_id %}
+                                                        ({{ order.items_counts|get_item:item_id }})
+                                                    </span>
+
+                                                    <a class="tooltips" href="/search/{{ item }}/" target="_blank">
+                                                        <span>Find this pair</span>
+                                                        <button type="button">?</button>
+                                                    </a>
+                                                </td>
+
+                                                <td>{{ item.owner }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </table></td>
+
                                 {% if profits|list_item:forloop.counter %}
                                     <td>{{ profits|list_item:forloop.counter|floatformat:2 }}$</td>
                                 {% elif order.returned %}

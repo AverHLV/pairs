@@ -17,7 +17,7 @@ from .tokens import account_activation_token, password_reset_token
 from .models import CustomUser, Note
 from .forms import SignUpForm, PasswordResetForm, NoteForm
 
-logger = logging.getLogger(constants.logger_name)
+logger = logging.getLogger('custom')
 
 
 def signup(request):

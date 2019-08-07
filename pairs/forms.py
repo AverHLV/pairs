@@ -14,7 +14,7 @@ from .parsers import (
     get_rank_from_response, get_delivery_time, get_ebay_price_from_response, get_seller_id_from_response
 )
 
-logger = logging.getLogger(constants.logger_name)
+logger = logging.getLogger('custom')
 
 
 class PairForm(forms.ModelForm):
