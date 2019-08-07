@@ -5,9 +5,9 @@ from urllib.error import URLError
 from lxml.html import fromstring, HTMLParser
 from re import search
 from datetime import datetime
-from config.constants import ebay_delivery_months, logger_name
+from config.constants import ebay_delivery_months
 
-logger = logging.getLogger(logger_name)
+logger = logging.getLogger('custom')
 
 
 def get_rank_from_response(response):

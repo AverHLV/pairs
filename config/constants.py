@@ -23,7 +23,6 @@ else:
     workflow_log_path = '/home/aver/logs/celery/workflow_err.log'
     repricer_log_path = '/home/aver/logs/celery/repricer_err.log'
 
-logger_name = 'custom'
 load_encoding = 'utf8'
 
 # pairs models

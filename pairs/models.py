@@ -12,7 +12,7 @@ shipping_info_fields = (
     'CountryCode', 'Phone', 'AddressType'
 )
 
-logger = logging.getLogger(constants.logger_name)
+logger = logging.getLogger('custom')
 
 
 class OrdersManager(models.Manager):
