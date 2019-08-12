@@ -12,8 +12,8 @@
             {% for user in users %}
                 <tr>
                     <td>{{ user.username }}</td>
-                    <td>{{ user.profit }}</td>
-                    <td>{{ user.get_relative_profit }}</td>
+                    <td>{{ user.profit|floatformat:2 }}</td>
+                    <td>{{ user.get_relative_profit|floatformat:2 }}</td>
                     <td>{{ user.pairs_count }} / {{ pair_min }}</td>
                 </tr>
             {% endfor %}

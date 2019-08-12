@@ -36,7 +36,7 @@ def graphs(request):
 
     for user in CustomUser.objects.filter(is_active=True).order_by('username'):
         usernames.append(user.username)
-        profits.append(user.profit)
+        profits.append(round(user.profit, 2))
         ordernumbers.append([True for order in orders if user.username in order.get_owners_names()].count(True))
 
     usernumbers = range(len(usernames))
@@ -76,7 +76,7 @@ def graphs(request):
 
     fig2.tight_layout()
 
-    # orders stats plot in new figure
+    # orders stats plot
 
     fig3 = plt.figure()
 
