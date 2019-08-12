@@ -74,6 +74,7 @@ amazon_approximate_price_percent = {
 pair_unsuitable_days_live = 7
 amazon_workflow_delay = 180  # seconds
 check_after_delay = 3600  # seconds
+price_digits = 3
 
 # pairs parsers
 
@@ -200,3 +201,8 @@ us_states_abbr = {
     'WY': 'Wyoming',
     'DC': 'District Of Columbia'
 }
+
+# finder interface
+timeout = 5
+threshold_month_number = 3
+rank_drop = 1000
