@@ -1,6 +1,6 @@
 migrations
 site
+*.log
 *.json
 run_*.py
 start.bat
-main.log
