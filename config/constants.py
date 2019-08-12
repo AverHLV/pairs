@@ -202,6 +202,9 @@ us_states_abbr = {
     'DC': 'District Of Columbia'
 }
 
+# repricer tasks
+old_stats_days_live = 5
+
 # finder interface
 timeout = 5
 threshold_month_number = 3

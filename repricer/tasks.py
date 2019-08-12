@@ -1,5 +1,10 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.utils.timezone import get_current_timezone
+
+from datetime import datetime, timedelta
+
+from config import constants
 from pairs.parsers import get_my_price_from_response
 from pairs.tasks import set_prices, set_prices_local
 from pairs.helpers import get_item_price_info
@@ -124,3 +129,14 @@ def reprice(strategy=1):
 
     set_prices(prices)
     logger.info('Reprice configuration set')
+
+
+@shared_task(name='Delete old repricer info')
+def delete_old_repricer_info():
+    """ Delete old repricer statistics info """
+
+    for stats in RepricerStats.objects.filter(created__lte=datetime.now(get_current_timezone()) - timedelta(
+           days=constants.old_stats_days_live)):
+        stats.delete()
+
+    logger.info('Old reprice info deleted')
