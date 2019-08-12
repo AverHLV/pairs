@@ -42,6 +42,14 @@ LOGGING = {
             'filename': 'main.log',
             'formatter': 'simple_formatter',
             'maxBytes': 104857600
+        },
+
+        'finder_file_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'finder.log',
+            'formatter': 'simple_formatter',
+            'maxBytes': 104857600
         }
     },
 
@@ -56,6 +64,11 @@ LOGGING = {
             'handlers': ['file_handler'],
             'level': 'INFO',
             'propagate': True
+        },
+
+        'finder': {
+            'handlers': ['finder_file_handler'],
+            'level': 'INFO'
         }
     }
 }

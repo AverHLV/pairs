@@ -237,7 +237,8 @@ def get_prices(asins):
 def set_prices(asins_prices):
     """ Set correct prices by given asins and price values """
 
-    messages = [(Pair.objects.get(asin=asin[0]).seller_sku, asin[1]) for asin in asins_prices]
+    messages = [(Pair.objects.get(asin=asin[0]).seller_sku, round(asin[1], constants.price_digits))
+                for asin in asins_prices]
 
     if len(messages):
         xml_price_helper.make_body(messages)
