@@ -2,7 +2,7 @@ from re import fullmatch
 from time import sleep
 from config import constants
 from utils import amazon_products_api
-from .parsers import get_buybox_price_from_response, get_no_buybox_price_from_response
+from .parsers import get_buybox_price_from_response, get_no_buybox_price_from_response, get_my_price_from_response
 from .models import Pair, CustomUser
 
 
@@ -103,3 +103,18 @@ def get_item_price_info(asins, logger, delay=0.5):
         sleep(delay)
 
     return result_price_info
+
+
+def update_my_prices():
+    """ Update items current prices in db """
+
+    for pair in Pair.objects.all().exclude(seller_sku=''):
+        try:
+            response = amazon_products_api.api.get_my_price_for_sku(amazon_products_api.region, [pair.seller_sku])
+
+        except amazon_products_api.connection_error as e:
+            print('Unhandled error: {}'.format(e))
+            continue
+
+        pair.amazon_current_price = get_my_price_from_response(response)[0]
+        pair.save(update_fields=['amazon_current_price'])
