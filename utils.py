@@ -3,12 +3,14 @@ from ebaysdk.shopping import Connection as Shopping
 from ebaysdk.exception import ConnectionError
 from mws import Products, Orders, Feeds, MWSError
 from django.core.exceptions import ImproperlyConfigured
-from config import constants
+
 from xml.etree import ElementTree
 from copy import deepcopy
 from datetime import datetime, timedelta
 from time import sleep
 from json import loads
+
+from config import constants
 
 
 def get_secret(filename):

@@ -45,7 +45,7 @@ def graphs(request):
     for day in days:
         found_orders = orders.filter(created__contains=current_time.replace(day=day).date())
         ordercounts.append(len(found_orders))
-        orderprofits.append(sum([order.total_profit for order in found_orders]))
+        orderprofits.append(round(sum([order.total_profit for order in found_orders]), 2))
 
     plt.style.use('ggplot')
     rc('font', size=14)
