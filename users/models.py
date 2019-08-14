@@ -1,6 +1,9 @@
+import logging
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from config import constants
+
+logger = logging.getLogger('custom')
 
 
 class CustomUser(AbstractUser):
@@ -43,6 +46,9 @@ class CustomUser(AbstractUser):
     def update_profit(self, profit, increase=True):
         """ Update profit of this user and all others in the established hierarchy """
 
+        if self.username in constants.profit_names_special:
+            profit = self.update_profit_by_name(profit, increase)
+
         if increase:
             self.profit += self.get_profit(profit)
         else:
@@ -62,6 +68,33 @@ class CustomUser(AbstractUser):
                     user.profit -= profit * profit_vector[level]
 
                 user.save(update_fields=['profit'])
+
+    def update_profit_by_name(self, profit: float, increase: bool) -> float:
+        """ Update user profit by specific strategy with chosen users """
+
+        names = constants.profit_names_special.copy()
+        names.remove(self.username)
+
+        for name in names:
+            try:
+                user = CustomUser.objects.get(username=name)
+
+            except CustomUser.DoesNotExist:
+                logger.warning('Special profit update, user does not exist: {}'.format(name))
+                continue
+
+            percentage = profit * constants.profit_percentage_special
+
+            if increase:
+                profit -= percentage
+                user.profit += percentage
+
+            else:
+                user.profit -= percentage
+
+            user.save(update_fields=['profit'])
+
+        return profit
 
 
 class Note(models.Model):

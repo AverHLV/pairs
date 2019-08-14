@@ -104,6 +104,8 @@ profit_percent = [
     {'mine': 1}
 ]
 
+profit_names_special = ['Oleksandr_Yamkovyi', 'Diatlenko']
+profit_percentage_special = 0.2
 note_preview_length = 40
 
 # utils
