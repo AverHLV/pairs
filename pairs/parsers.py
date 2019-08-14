@@ -235,14 +235,22 @@ def get_buybox_price_from_response(price_info, response):
 
     else:
         for i in range(len(response.parsed)):
-            if not len(response.parsed[i]['Product']['CompetitivePricing']['CompetitivePrices']):
+            try:
+                response.parsed[i]['Product']
+
+            except KeyError:
                 price_info[i].append(0)
                 price_info[i].append(None)
 
             else:
-                comp_price_dict = response.parsed[i]['Product']['CompetitivePricing']['CompetitivePrices'][
-                    'CompetitivePrice']
-                fill_price_info(i)
+                if not len(response.parsed[i]['Product']['CompetitivePricing']['CompetitivePrices']):
+                    price_info[i].append(0)
+                    price_info[i].append(None)
+
+                else:
+                    comp_price_dict = response.parsed[i]['Product']['CompetitivePricing']['CompetitivePrices'][
+                        'CompetitivePrice']
+                    fill_price_info(i)
 
 
 def get_no_buybox_price_from_response(asins_no_buybox, response):

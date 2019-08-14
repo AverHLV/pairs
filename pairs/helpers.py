@@ -53,7 +53,11 @@ def get_item_price_info(asins, logger, delay=0.5):
         0, len(asins), constants.amazon_get_my_price_items_limit
     )]
 
+    logger.info('Getting price info started')
+
     for part in asins:
+        logger.info('Asins part: {}'.format(part))
+
         # get buybox-existence info
 
         price_info = [[asin] for asin in part]
