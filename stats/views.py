@@ -16,11 +16,17 @@ from users.models import CustomUser
 
 @login_required
 @moderator_required
-def users(request):
+def users_stats(request):
     """ Users stats page """
 
+    users = CustomUser.objects.filter(is_active=True).order_by('username')
+    orders = Order.objects.filter(created__gte=datetime.now(get_current_timezone()).replace(day=1))
+    cost = sum([order.ebay_price for order in orders]) if len(orders) else 0
+
     return render(request, 'users.html', {
-        'users': CustomUser.objects.filter(is_active=True).order_by('username'),
+        'users': users,
+        'profit': sum([user.profit for user in users]),
+        'cost': cost,
         'pair_min': constants.pair_minimum
     })
 
