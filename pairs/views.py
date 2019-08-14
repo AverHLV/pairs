@@ -122,8 +122,8 @@ def orders_paginator(request, page_number=1, for_search=False, search_order=None
     purchase_details = {order.id: [render_to_string('buying_details.html', {'order': order})]
                         for order in orders.filter(items_buying_status__isnull=False)}
 
-    profits = [order.calculate_profits(owner) for order in orders]
     orders = Paginator(orders, constants.on_page_obj_number).page(page_number)
+    profits = [order.calculate_profits(owner) for order in orders]
     
     return render(request, 'orders.html', {
         'orders': orders,
