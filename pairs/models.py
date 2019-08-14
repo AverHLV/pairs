@@ -66,6 +66,7 @@ class Pair(TimeStamped):
 
     :field amazon_current_price: current item price on Amazon
     :field is_buybox_winner: indicates if pair win the buybox or not, also False for no-buybox pairs
+    :field old_buybox_price: competitor buybox price, stored for repricing strategy
     :field reason message: custom message with reason of unsuitable check
 
     """
@@ -81,6 +82,7 @@ class Pair(TimeStamped):
     amazon_minimum_price = models.FloatField()
     amazon_current_price = models.FloatField(default=0)
     is_buybox_winner = models.BooleanField(default=False)
+    old_buybox_price = models.FloatField(default=0)
     reason_message = models.CharField(max_length=constants.reason_message_max_length, blank=True)
 
     class Meta:

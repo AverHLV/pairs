@@ -43,6 +43,7 @@ def reprice(strategy=1):
     prices_info = get_item_price_info(asins, logger)
 
     if prices_info is None:
+        logger.critical('Empty prices info list')
         return
 
     for asin_info in prices_info:
@@ -57,60 +58,104 @@ def reprice(strategy=1):
         if not price:
             price = pair.amazon_approximate_price
 
-        elif price < pair.amazon_minimum_price:
+        elif price <= pair.amazon_minimum_price:
             price = pair.amazon_minimum_price
             minimum_price_granted = True
 
-        # actions according to the BuyBox status
+        # first strategy
 
-        if buybox_status is None:
-            # if no BuyBox
+        if not strategy:
+            # actions according to the BuyBox status
 
-            if price != pair.amazon_current_price:
-                if strategy == 1 and not minimum_price_granted:
+            if buybox_status is None:
+                # if no BuyBox
+
+                if price != pair.amazon_current_price and not minimum_price_granted:
                     price -= 0.01
+                    prices.append((pair.asin, price))
 
-                prices.append((pair.asin, price))
+                else:
+                    pair.set_buybox_status(False)
+                    continue
 
-            else:
-                pair.set_buybox_status(False)
-                continue
+            elif buybox_status:
+                # if BuyBox winner
 
-        elif buybox_status:
-            # if BuyBox winner
-
-            pair.set_buybox_status(buybox_status)
-            continue
-
-        else:
-            # if no BuyBox winner
-
-            if pair.is_buybox_winner and price < pair.amazon_current_price:
-                if strategy == 1 and not minimum_price_granted:
-                    price -= 0.01
-
-                prices.append((pair.asin, price))
-
-            elif strategy == 1 and pair.is_buybox_winner and price == pair.amazon_current_price:
-                price -= 0.01
-                prices.append((pair.asin, price))
-
-            elif pair.is_buybox_winner and price >= pair.amazon_current_price:
                 pair.set_buybox_status(buybox_status)
                 continue
 
             else:
-                # if no BuyBox winner earlier
+                # if no BuyBox winner, but BuyBox winner earlier
 
-                if price != pair.amazon_current_price:
-                    if strategy == 1 and not minimum_price_granted:
+                if pair.is_buybox_winner and price <= pair.amazon_current_price and not minimum_price_granted:
+                    price -= 0.01
+                    prices.append((pair.asin, price))
+
+                elif pair.is_buybox_winner and price > pair.amazon_current_price:
+                    pair.set_buybox_status(buybox_status)
+                    continue
+
+                elif not pair.is_buybox_winner:
+                    # if no BuyBox winner earlier
+
+                    if price != pair.amazon_current_price and not minimum_price_granted:
                         price -= 0.01
+                        prices.append((pair.asin, price))
 
+                    else:
+                        pair.set_buybox_status(buybox_status)
+                        continue
+
+        # second strategy with another price reduction
+
+        elif strategy == 1:
+            # actions according to the BuyBox status
+
+            if buybox_status is None:
+                # if no BuyBox
+
+                if price != pair.amazon_current_price and not minimum_price_granted:
+                    price -= 0.01
                     prices.append((pair.asin, price))
 
                 else:
+                    pair.set_buybox_status(False)
+                    continue
+
+            elif buybox_status:
+                # if BuyBox winner
+
+                pair.set_buybox_status(buybox_status)
+                continue
+
+            else:
+                # if no BuyBox winner, but BuyBox winner earlier
+
+                if pair.is_buybox_winner and price <= pair.amazon_current_price and not minimum_price_granted:
+                    price -= 0.01
+                    prices.append((pair.asin, price))
+
+                elif pair.is_buybox_winner and price > pair.amazon_current_price:
                     pair.set_buybox_status(buybox_status)
                     continue
+
+                elif not pair.is_buybox_winner:
+                    # if no BuyBox winner earlier
+
+                    if price != pair.amazon_current_price and not minimum_price_granted:
+                        if price != pair.old_buybox_price:
+                            pair.old_buybox_price = price
+                            pair.save(update_fields=['old_buybox_price'])
+                            price -= 0.01
+
+                        elif pair.amazon_current_price - 0.01 >= pair.amazon_minimum_price:
+                            price = pair.amazon_current_price - 0.01
+
+                        prices.append((pair.asin, price))
+
+                    else:
+                        pair.set_buybox_status(buybox_status)
+                        continue
 
         if buybox_status is None:
             pair.set_buybox_status(False)
