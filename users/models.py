@@ -28,8 +28,11 @@ class CustomUser(AbstractUser):
     class Meta:
         db_table = 'users'
 
-    def get_profit(self, profit):
+    def get_profit(self, profit, increase=True, save=False):
         """ Calculate profit for this user """
+
+        if self.username in constants.profit_names_special:
+            profit = self.update_profit_by_name(profit, increase, save)
 
         return round(profit * constants.profit_percent[self.profit_level]['mine'], 2)
 
@@ -46,13 +49,10 @@ class CustomUser(AbstractUser):
     def update_profit(self, profit, increase=True):
         """ Update profit of this user and all others in the established hierarchy """
 
-        if self.username in constants.profit_names_special:
-            profit = self.update_profit_by_name(profit, increase)
-
         if increase:
-            self.profit += self.get_profit(profit)
+            self.profit += self.get_profit(profit, increase, save=True)
         else:
-            self.profit -= self.get_profit(profit)
+            self.profit -= self.get_profit(profit, increase, save=True)
 
         self.save(update_fields=['profit'])
 
@@ -69,7 +69,7 @@ class CustomUser(AbstractUser):
 
                 user.save(update_fields=['profit'])
 
-    def update_profit_by_name(self, profit: float, increase: bool) -> float:
+    def update_profit_by_name(self, profit: float, increase: bool, save: bool) -> float:
         """ Update user profit by specific strategy with chosen users """
 
         names = constants.profit_names_special.copy()
@@ -83,16 +83,17 @@ class CustomUser(AbstractUser):
                 logger.warning('Special profit update, user does not exist: {}'.format(name))
                 continue
 
-            percentage = profit * constants.profit_percentage_special
-
             if increase:
+                percentage = profit * constants.profit_percentage_special
                 profit -= percentage
-                user.profit += percentage
+                user.profit += round(percentage, 2)
 
             else:
-                user.profit -= percentage
+                percentage = (profit / (1 - constants.profit_percentage_special)) * constants.profit_percentage_special
+                user.profit -= round(percentage, 2)
 
-            user.save(update_fields=['profit'])
+            if save:
+                user.save(update_fields=['profit'])
 
         return profit
 
