@@ -39,7 +39,10 @@ class CustomUser(AbstractUser):
     def get_relative_profit(self):
         """ Calculate relative profit according to user pairs count """
 
-        return round(self.profit * (self.pairs_count / constants.pair_minimum), 2)
+        if self.pairs_count > constants.pair_minimum:
+            return self.profit
+
+        return self.profit * (self.pairs_count / constants.pair_minimum)
 
     def recover_profit(self, profit):
         """ Calculate initial income by user profit """
