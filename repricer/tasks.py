@@ -114,7 +114,7 @@ def reprice(strategy=1):
             if buybox_status is None:
                 # if no BuyBox
 
-                if price != pair.amazon_current_price and not minimum_price_granted:
+                if not minimum_price_granted:
                     price -= 0.01
                     prices.append((pair.asin, price))
 
@@ -142,7 +142,7 @@ def reprice(strategy=1):
                 elif not pair.is_buybox_winner:
                     # if no BuyBox winner earlier
 
-                    if price != pair.amazon_current_price and not minimum_price_granted:
+                    if not minimum_price_granted:
                         if price != pair.old_buybox_price:
                             pair.old_buybox_price = price
                             pair.save(update_fields=['old_buybox_price'])
