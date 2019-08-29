@@ -41,7 +41,12 @@ def graphs(request):
     orders = Order.objects.filter(created__gte=current_time.replace(day=1))
 
     for user in CustomUser.objects.filter(is_active=True).order_by('username'):
-        usernames.append(user.username)
+        username = user.username
+
+        if len(username) > constants.users_names_length:
+            username = username[:constants.users_names_length] + '.'
+
+        usernames.append(username)
         profits.append(round(user.profit, 2))
         ordernumbers.append([True for order in orders if user.username in order.get_owners_names()].count(True))
 

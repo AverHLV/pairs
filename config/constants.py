@@ -95,6 +95,7 @@ ebay_delivery_months = {
 
 # stats views
 
+users_names_length = 5
 repricer_stats_hours = 10
 
 # users models
