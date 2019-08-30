@@ -85,8 +85,9 @@ def check_products(check_type, asins=None, max_asins=constants.amazon_get_my_pri
                     pair.checked = 4
                     pair.save(update_fields=['seller_sku', 'checked'])
 
-                    pair.owner.pairs_count -= 1
-                    pair.owner.save(update_fields=['pairs_count'])
+                    if pair.owner.pairs_count > 0:
+                        pair.owner.pairs_count -= 1
+                        pair.owner.save(update_fields=['pairs_count'])
 
             else:
                 if check_type == 'check_before':
