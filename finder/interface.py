@@ -353,21 +353,12 @@ class KeepaFinder(object):
         return False
 
 
-if __name__ == '__main__':
-    from json import loads
-
-    try:
-        with open('finder_secret.json') as file:
-            secret = loads(file.read())
-
-    except IOError as ex:
-        secret = None
-        print('Secret file not found: {0}'.format(ex))
-        exit()
+def run_finder(uri):
+    from utils import secret_dict
 
     am_finder = AmazonFinder()
-    api = BrowseAPI(secret['eb_app_id'], secret['eb_cert_id'])
-    info_results = am_finder('https://www.amazon.com/s?me=A30IB5N4GHQ6IG&marketplaceID=ATVPDKIKX0DER')
+    api = BrowseAPI(secret_dict['eb_app_id'], secret_dict['eb_cert_id'])
+    info_results = am_finder(uri)
 
     # keepa_finder = KeepaFinder(secret['secret_key'])
     # info_results = keepa_finder(info)
@@ -397,3 +388,7 @@ if __name__ == '__main__':
         print('\n')
 
     print('All:', pr_all, 'none:', none, '\n{:.2f}%'.format((none * 100) / pr_all))
+
+
+if __name__ == '__main__':
+    run_finder('https://www.amazon.com/s?me=A30IB5N4GHQ6IG&marketplaceID=ATVPDKIKX0DER')
