@@ -376,13 +376,18 @@ def run_finder(uri):
         print('Q:', info_results[asin_info[k]]['title'])
 
         try:
+            resps[k].itemSummaries
+
+        except AttributeError:
+            none += 1
+
+        try:
             for j in range(5):
                 print(resps[k].itemSummaries[j].itemId.split('|'))
                 print(resps[k].itemSummaries[j].title, '\n')
 
         except (IndexError, AttributeError):
             print('None\n')
-            none += 1
             continue
 
         print('\n')
