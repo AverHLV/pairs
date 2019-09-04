@@ -21,6 +21,9 @@ logger = logging.getLogger('finder')
 class AmazonFinder(object):
     """ Amazon products finder """
 
+    headers = {'Connection': 'close'}
+    parser = etree.HTMLParser()
+
     def __init__(self, url=None):
         """
         AmazonFinder initialization
@@ -36,8 +39,6 @@ class AmazonFinder(object):
         self.pages = []
         self.products = {}
         self.url = url + '&page={page_number}'
-        self.headers = {'Connection': 'close'}
-        self.parser = etree.HTMLParser()
 
     @log_work_time('AmazonFinder')
     def __call__(self, url: str) -> dict:
@@ -91,6 +92,9 @@ class AmazonFinder(object):
             self.pages.append(etree.fromstring(await self.request(), self.parser))
             self.pages_number = int(self.pages[0].xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
 
+        except IndexError:
+            logger.critical('Getting pages number failed')
+
         finally:
             await self.session.close()
 
@@ -143,11 +147,10 @@ class AmazonFinder(object):
         asyncio.set_event_loop(loop)
 
         try:
-            # loop.run_until_complete(self.get_first_page())
-            self.pages_number = 25
+            loop.run_until_complete(self.get_first_page())
 
             if self.pages_number is None:
-                logger.critical('Getting pages number failed')
+                return
 
             elif self.pages_number > 1:
                 loop.run_until_complete(self.send_requests())
@@ -212,7 +215,8 @@ class AmazonFinder(object):
         """ Process previously found pages """
 
         if not len(self.pages):
-            raise ValueError('Pages list is empty')
+            logger.critical('Pages list is empty')
+            return
 
         for page in self.pages:
             self.find_products_info(page)
@@ -363,15 +367,18 @@ if __name__ == '__main__':
 
     am_finder = AmazonFinder()
     api = BrowseAPI(secret['eb_app_id'], secret['eb_cert_id'])
-    info = am_finder('https://www.amazon.com/s?me=A193OK6W10JJDU&marketplaceID=ATVPDKIKX0DER')
+    info_results = am_finder('https://www.amazon.com/s?me=A30IB5N4GHQ6IG&marketplaceID=ATVPDKIKX0DER')
 
     # keepa_finder = KeepaFinder(secret['secret_key'])
     # info_results = keepa_finder(info)
 
-    info_results = am_finder.run_loop_for_images(info)
+    # info_results = am_finder.run_loop_for_images(info_results)
     asin_info = list(info_results.keys())
 
     resps = api.execute('search', [{'q': info_results[asin]['title']} for asin in asin_info])
+
+    pr_all = len(list(info_results.keys()))
+    none = 0
 
     for k in range(len(asin_info)):
         print('ASIN:', asin_info[k])
@@ -384,6 +391,9 @@ if __name__ == '__main__':
 
         except (IndexError, AttributeError):
             print('None\n')
+            none += 1
             continue
 
         print('\n')
+
+    print('All:', pr_all, 'none:', none, '\n{:.2f}%'.format((none * 100) / pr_all))
