@@ -1,5 +1,6 @@
 from ebaysdk.trading import Connection as Trading
 from ebaysdk.shopping import Connection as Shopping
+from ebaysdk.finding import Connection as Finding
 from ebaysdk.exception import ConnectionError
 from mws import Products, Orders, Feeds, MWSError
 from django.core.exceptions import ImproperlyConfigured
@@ -122,6 +123,9 @@ class ApiObject(object):
 
             elif service == 'ebay-shopping':
                 api = Shopping
+
+            elif service == 'ebay-finding':
+                api = Finding
 
             else:
                 raise ValueError('This eBay api is not supported: {0}'.format(service))
@@ -268,6 +272,7 @@ secret_dict = get_secret(constants.secret_filename)
 # apis
 ebay_trading_api = ApiObject(secret_dict, 'ebay-trading')
 ebay_shopping_api = ApiObject(secret_dict, 'ebay-shopping')
+ebay_finding_api = ApiObject(secret_dict, 'ebay-finding')
 amazon_products_api = ApiObject(secret_dict, 'amazon-products', country=constants.amazon_region)
 amazon_orders_api = ApiObject(secret_dict, 'amazon-orders', country=constants.amazon_region)
 amazon_feeds_api = ApiObject(secret_dict, 'amazon-feeds', feed_types=constants.amazon_feed_types,

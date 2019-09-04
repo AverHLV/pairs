@@ -395,5 +395,35 @@ def run_finder(uri):
     print('All:', pr_all, 'none:', none, '\n{:.2f}%'.format((none * 100) / pr_all))
 
 
+def run_finder_finding(uri):
+    from utils import ebay_finding_api
+
+    am_finder = AmazonFinder()
+    info_results = am_finder(uri)
+
+    # keepa_finder = KeepaFinder(secret['secret_key'])
+    # info_results = keepa_finder(info)
+
+    # info_results = am_finder.run_loop_for_images(info_results)
+    asin_info = list(info_results.keys())
+    pr_all = len(list(info_results.keys()))
+    none = 0
+
+    for asin in asin_info:
+        try:
+            response = ebay_finding_api.api.execute(
+                'findItemsByKeywords', {'keywords': info_results[asin]['title'].replace(',', ' ')}
+            )
+
+        except ebay_finding_api.connection_error:
+            continue
+
+        else:
+            if not int(response.reply.searchResult.get('_count')):
+                none += 1
+
+    print('All:', pr_all, 'none:', none, '\n{:.2f}%'.format((none * 100) / pr_all))
+
+
 if __name__ == '__main__':
     run_finder('https://www.amazon.com/s?me=A30IB5N4GHQ6IG&marketplaceID=ATVPDKIKX0DER')
