@@ -88,7 +88,8 @@ INSTALLED_APPS = [
     'stats',
     'users',
     'logs',
-    'repricer'
+    'repricer',
+    'finder'
 ]
 
 MIDDLEWARE = [
