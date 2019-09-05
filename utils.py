@@ -21,7 +21,7 @@ def get_secret(filename):
         'secret_key', 'db_admin', 'db_pass', 'db_name', 'db_host', 'db_port', 'broker_url', 'em_user', 'em_pass',
         'em_server', 'em_port', 'eb_app_id', 'eb_dev_id', 'eb_cert_id', 'eb_ru_name', 'eb_user_token',
         'eb_token_exp_date', 'eb_username', 'eb_password', 'pp_email', 'pp_password', 'am_seller_id', 'am_access_key',
-        'am_secret_key', 'am_auth_token', 'hosts', 'admins'
+        'am_secret_key', 'am_auth_token', 'keepa_key', 'hosts', 'admins'
     )
 
     try:

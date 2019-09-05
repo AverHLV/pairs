@@ -41,6 +41,7 @@
                     <li><a href="/orders/">Orders</a></li>
 
                     {% if request.user.is_moderator %}
+                        <li><a href="/admin/">Admin</a></li>
                         <li><a href="/stats/users/">Users stats</a></li>
                         <li><a href="/stats/">Graphs</a></li>
                     {% endif %}
