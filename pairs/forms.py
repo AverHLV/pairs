@@ -8,7 +8,7 @@ from requests.adapters import ConnectionError
 
 from config import constants
 from utils import ebay_trading_api, amazon_products_api
-from .helpers import get_item_price_info
+from .helpers import get_item_price_info, check_profit
 from .models import Pair, NotAllowedSeller
 from .parsers import (
     get_rank_from_response, get_delivery_time, get_ebay_price_from_response, get_seller_id_from_response
@@ -53,42 +53,6 @@ class PairForm(forms.ModelForm):
             'ebay_min_positive_percentage': constants.ebay_min_positive_percentage,
             'ebay_max_delivery_time': constants.ebay_max_delivery_time
         })
-
-    def check_profit(self):
-        """ Check minimum profit for asin and all eBay ids and calculate approximate price for Amazon """
-
-        prices, ebay_prices = [], []
-
-        for ebay_price in self.ebay_price:
-            if not ebay_price:
-                continue
-
-            price = 0
-
-            for interval in constants.profit_intervals:
-                if interval[0] <= ebay_price < interval[1]:
-                    price = ebay_price * constants.profit_intervals[interval] / constants.profit_percentage
-                    prices.append(price)
-                    ebay_prices.append(ebay_price)
-                    break
-
-            if self.amazon_price:
-                if price + constants.profit_buffer >= self.amazon_price:
-                    return False
-
-        # getting approximate price
-
-        max_ebay_price_coeff = 0
-        max_price = max(prices)
-        max_ebay_price = ebay_prices[prices.index(max_price)]
-
-        for interval in constants.amazon_approximate_price_percent:
-            if interval[0] <= max_ebay_price < interval[1]:
-                max_ebay_price_coeff = constants.amazon_approximate_price_percent[interval]
-
-        self.amazon_minimum_price = round(min(prices), 2)
-        self.amazon_approximate_price = round(max_price + max_ebay_price * max_ebay_price_coeff, 2)
-        return True
 
     def clean_input_asin(self):
         asin = self.cleaned_data['asin']
@@ -333,7 +297,8 @@ class PairForm(forms.ModelForm):
         if self.old_asin_not_changed and self.old_ebay_not_changed:
             raise forms.ValidationError('You have not changed anything.', code='fe1')
 
-        profit_check = self.check_profit()
+        profit_check, self.amazon_minimum_price, self.amazon_approximate_price = \
+            check_profit(self.amazon_price, self.ebay_price)
 
         if not self.errors and not profit_check:
             raise forms.ValidationError('Specified items do not bring the minimum desired benefit.', code='fe2')

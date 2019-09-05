@@ -122,3 +122,50 @@ def update_my_prices():
 
         pair.amazon_current_price = get_my_price_from_response(response)[0]
         pair.save(update_fields=['amazon_current_price'])
+
+
+def check_profit(amazon_price: float, ebay_prices: list) -> tuple:
+    """
+    Check minimum profit for asin and all eBay ids and calculate approximate price for Amazon
+
+    :param amazon_price: Amazon item lowest price
+    :param ebay_prices: list of eBay items prices
+    :return: tuple: check result and calculated prices in format:
+        (Check result - True or False, Amazon minimum price, Amazon approximate price)
+    """
+
+    prices, chosen_ebay_prices = [], []
+
+    for ebay_price in ebay_prices:
+        if not ebay_price:
+            continue
+
+        price = 0
+
+        for interval in constants.profit_intervals:
+            if interval[0] <= ebay_price < interval[1]:
+                price = ebay_price * constants.profit_intervals[interval] / constants.profit_percentage
+                prices.append(price)
+                chosen_ebay_prices.append(ebay_price)
+                break
+
+        if amazon_price:
+            if price + constants.profit_buffer >= amazon_price:
+                return False, None, None
+
+    # getting approximate price
+
+    if not len(prices):
+        return False, None, None
+
+    max_ebay_price_coeff = 0
+    max_price = max(prices)
+    max_ebay_price = chosen_ebay_prices[prices.index(max_price)]
+
+    for interval in constants.amazon_approximate_price_percent:
+        if interval[0] <= max_ebay_price < interval[1]:
+            max_ebay_price_coeff = constants.amazon_approximate_price_percent[interval]
+
+    amazon_minimum_price = round(min(prices), 2)
+    amazon_approximate_price = round(max_price + max_ebay_price * max_ebay_price_coeff, 2)
+    return True, amazon_minimum_price, amazon_approximate_price
