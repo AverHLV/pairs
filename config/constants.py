@@ -212,7 +212,7 @@ old_stats_days_live = 5
 timeout = 5
 threshold_month_number = 3
 title_n_words = 8
-rank_drop = 1000
+rank_drop_percentage = 10
 
 stopwords = [
     'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he',

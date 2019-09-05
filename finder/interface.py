@@ -4,222 +4,158 @@ import asyncio
 from aiohttp import client_exceptions, ClientSession, ClientTimeout
 from django.core.exceptions import ImproperlyConfigured
 from keepa import Keepa
-from browseapi import BrowseAPI
-from lxml import etree
 from numpy import isnan
+from lxml import etree
 
-from base64 import b64encode
 from datetime import datetime, timedelta
 from re import sub
 
 from config import constants
+from pairs.helpers import get_item_price_info
 from decorators import log_work_time
 
 logger = logging.getLogger('finder')
 
 
 class AmazonFinder(object):
-    """ Amazon products finder """
+    """ Amazon _products information finder """
 
-    headers = {'Connection': 'close'}
-    parser = etree.HTMLParser()
+    _headers = {'Connection': 'close'}
+    _parser = etree.HTMLParser()
+    _timeout = ClientTimeout(total=constants.timeout)
 
-    def __init__(self, url=None):
+    def __init__(self, uri: str = None):
         """
         AmazonFinder initialization
 
-        :param url: Amazon search url, str
+        :param uri: Amazon search uri
         """
 
-        if url is None:
+        if uri is None:
             return
 
-        self.session = None
-        self.pages_number = None
-        self.pages = []
-        self.products = {}
-        self.url = url + '&page={page_number}'
+        self._session = None
+        self._pages_number = None
+        self._pages = []
+        self._products = {}
+        self._uri = uri + '&page={page_number}'
 
     @log_work_time('AmazonFinder')
-    def __call__(self, url: str) -> dict:
-        """ Reinitialize for new url and find products info """
+    def __call__(self, uri: str) -> dict:
+        """ Reinitialize for new uri and find _products info """
 
-        self.__init__(url)
-        self.run_loop()
-        self.process_pages()
-        return self.products
+        self.__init__(uri)
+        self._run_loop()
+        self._process_pages()
+        self._get_prices()
+        return self._products
 
-    async def request(self, page_number=1, url=None):
+    async def _request(self, page_number: int = 1):
         """
         Send GET request
 
         :param page_number: positive integer
-        :param url: url for image downloading
-        :return: html response in bytes or str
+        :return: html str response
         """
 
-        image = True
-
-        if url is None:
-            url = self.url.format(page_number=page_number)
-            image = False
-
         try:
-            async with self.session.get(url) as response:
-                if not image:
-                    return await response.text()
-                else:
-                    return await response.read()
+            async with self._session.get(self._uri.format(page_number=page_number)) as response:
+                return await response.text()
 
         except client_exceptions.ServerTimeoutError:
-            logger.critical('Request timeout error, page: {0}, url: {1}'.format(page_number, url))
+            logger.critical('Request timeout error, page: {0}, url: {1}'.format(page_number, self._uri))
 
         except client_exceptions.ClientConnectorError:
-            logger.critical('Request connection error, page: {0}, url: {1}'.format(page_number, url))
+            logger.critical('Request connection error, page: {0}, url: {1}'.format(page_number, self._uri))
 
         except client_exceptions.ClientOSError:
-            logger.critical('Request connection reset, page: {0}, url: {1}'.format(page_number, url))
+            logger.critical('Request connection reset, page: {0}, url: {1}'.format(page_number, self._uri))
 
         except client_exceptions.ServerDisconnectedError:
-            logger.critical('Server refused the request, page: {0}, url: {1}'.format(page_number, url))
+            logger.critical('Server refused the request, page: {0}, url: {1}'.format(page_number, self._uri))
 
-    async def get_first_page(self) -> None:
-        """ Get first products page for number of pages """
+    async def _get_first_page(self) -> None:
+        """ Get first _products page for number of pages """
 
-        self.session = ClientSession(headers=self.headers, timeout=ClientTimeout(total=constants.timeout))
-
-        try:
-            self.pages.append(etree.fromstring(await self.request(), self.parser))
-            self.pages_number = int(self.pages[0].xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
-
-        except IndexError:
-            logger.critical('Getting pages number failed')
-
-        finally:
-            await self.session.close()
-
-    async def send_requests(self) -> None:
-        """ Gather products lists pages via GET requests """
-
-        self.session = ClientSession(headers=self.headers, timeout=ClientTimeout(total=constants.timeout))
+        self._pages.append(etree.fromstring(await self._request(), self._parser))
 
         try:
-            responses = await asyncio.gather(*[self.request(page) for page in range(self.pages_number + 1)],
-                                             return_exceptions=True)
+            self._pages_number = int(self._pages[0].xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
 
-            for response in responses:
-                if isinstance(response, str):
-                    self.pages.append(etree.fromstring(response, self.parser))
+        except (IndexError, ValueError) as e:
+            logger.critical('Getting pages number failed, error: {}'.format(e))
 
-                else:
-                    logger.warning('Getting item info error: {}'.format(response))
+    async def _send_requests(self) -> None:
+        """ Gather _products lists pages via GET requests """
 
-        finally:
-            await self.session.close()
+        for response in await asyncio.gather(*[self._request(page) for page in range(self._pages_number + 1)],
+                                             return_exceptions=True):
+            if isinstance(response, str):
+                self._pages.append(etree.fromstring(response, self._parser))
 
-    async def load_images(self) -> None:
-        """ Load and encode images for all products """
+            else:
+                logger.warning('Getting item info error: {}'.format(response))
 
-        self.session = ClientSession(headers=self.headers, timeout=ClientTimeout(total=constants.timeout))
-
-        try:
-            products = [(product, self.products[product]['url']) for product in self.products]
-
-            responses = await asyncio.gather(
-                *([self.request(url=product[1]) for product in products]),
-                return_exceptions=True
-            )
-
-            for i in range(len(responses)):
-                if isinstance(responses[i], bytes):
-                    self.products[products[i][0]]['img'] = str(b64encode(responses[i])[2:-1])
-
-                else:
-                    logger.warning('Getting item picture error: {}'.format(responses[i]))
-
-        finally:
-            await self.session.close()
-
-    def run_loop(self) -> None:
+    def _run_loop(self) -> None:
         """ Run ioloop and wait until all requests will be done """
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        self._session = ClientSession(headers=self._headers, timeout=self._timeout)
 
         try:
-            loop.run_until_complete(self.get_first_page())
+            loop.run_until_complete(self._get_first_page())
 
-            if self.pages_number is None:
+            if self._pages_number is None:
                 return
 
-            elif self.pages_number > 1:
-                loop.run_until_complete(self.send_requests())
+            elif self._pages_number > 1:
+                loop.run_until_complete(self._send_requests())
 
         finally:
+            loop.run_until_complete(self._session.close())
             loop.close()
 
-    @log_work_time('AmazonFinder: images')
-    def run_loop_for_images(self, products: dict) -> dict:
-        """ Run ioloop and wait until all images will be downloaded """
-
-        self.products = products
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        try:
-            loop.run_until_complete(self.load_images())
-
-        finally:
-            loop.close()
-
-        return self.products
-
-    def find_products_info(self, tree: etree) -> None:
-        """ Find necessary products info in html elements """
+    def _find_products_info(self, tree: etree) -> None:
+        """ Find necessary _products info in html elements """
 
         products = tree.xpath('//div[@data-asin]')
 
         if not len(products):
-            logger.warning('Empty products list before finding')
+            logger.warning('Empty _products list before finding info')
             return
 
         for product in products:
-            img = product.xpath('.//img')[0]
             asin = product.get('data-asin')
-            url = img.get('src')
-            title = img.get('alt')
+            title = product.xpath('.//img')[0].get('alt')
 
-            if len(asin) != constants.asin_length:
-                asin = None
+            if asin is None or len(asin) != constants.asin_length:
+                continue
 
-            if title is not None:
-                title = sub(r'[^0-9a-z ]', '', title.lower())
-                title = sub(r' {2,}', ' ', ' ' + title + ' ')
-                title = sub(r' ({0}) '.format('|'.join(constants.stopwords)), ' ', title)
-                title = sub(r'^ | $', '', title)
-                title = ' '.join(title.split()[:constants.title_n_words])
-                title = sub(r' ', ',', title)
+            if title is None or not len(title):
+                continue
 
-            else:
-                title = None
+            title = sub(r'[^0-9a-z ]', '', title.lower())
+            title = sub(r' {2,}', ' ', ' ' + title + ' ')
+            title = sub(r' ({0}) '.format('|'.join(constants.stopwords)), ' ', title)
+            title = sub(r'^ | $', '', title)
+            self._products[asin] = {'title': ' '.join(title.split()[:constants.title_n_words])}
 
-            for value in asin, url, title:
-                if value is None or not len(value):
-                    break
-
-            else:
-                self.products[asin] = {'url': url, 'title': title}
-
-    def process_pages(self) -> None:
+    def _process_pages(self) -> None:
         """ Process previously found pages """
 
-        if not len(self.pages):
+        if not len(self._pages):
             logger.critical('Pages list is empty')
             return
 
-        for page in self.pages:
-            self.find_products_info(page)
+        for page in self._pages:
+            self._find_products_info(page)
+
+    def _get_prices(self) -> None:
+        """ Receive lowest prices for _products """
+
+        for price in get_item_price_info(list(self._products.keys()), logger):
+            self._products[price[0]]['price'] = price[1]
 
 
 class KeepaFinder(object):
@@ -232,6 +168,8 @@ class KeepaFinder(object):
         :param secret_key: 64 character secret key
         """
 
+        self._products = {}
+
         try:
             self.api = Keepa(secret_key)
 
@@ -241,20 +179,18 @@ class KeepaFinder(object):
             raise ImproperlyConfigured('Invalid Keepa API secret key')
 
     @log_work_time('KeepaFinder')
-    def __call__(self, products: dict) -> dict:
-        """ Find and analyze Amazon products statistics """
+    def __call__(self, products: list) -> list:
+        """ Find and analyze Amazon _products statistics """
 
-        self.products = {}
-        self.products_history(list(products.keys()))
+        self._products = {}
+        self._products_history(products)
 
-        for asin in self.products:
-            if not self.products[asin]['amazon'] or not self.analyze_sales(self.products[asin]['sales']) or \
-                    not self.analyze_offers(self.products[asin]['offers']):
-                products.pop(asin)
+        return [asin for asin in self._products
+                if self._products[asin]['amazon']
+                and self.analyze_sales(self._products[asin]['sales'])
+                and self.analyze_offers(self._products[asin]['offers'])]
 
-        return products
-
-    def products_history(self, asins: list) -> None:
+    def _products_history(self, asins: list) -> None:
         """
         Get product information for given asins
 
@@ -301,7 +237,7 @@ class KeepaFinder(object):
 
             # choose only actual data from arrays
 
-            self.products[asins[product_index]] = {
+            self._products[asins[product_index]] = {
                 'sales': list(sales[sales_index:]),
                 'offers': list(offers[offers_index:]),
                 'amazon': isnan(result[product_index]['data']['AMAZON'][0])
@@ -344,86 +280,10 @@ class KeepaFinder(object):
         drop_number = 0
 
         for i in range(len(sales) - 1):
-            if sales[i] - sales[i + 1] >= constants.rank_drop:
+            if 100 - ((sales[i + 1] * 100) / sales[i]) >= constants.rank_drop_percentage:
                 drop_number += 1
 
         if drop_number >= constants.threshold_month_number:
             return True
 
         return False
-
-
-def run_finder(uri):
-    from utils import secret_dict
-
-    am_finder = AmazonFinder()
-    api = BrowseAPI(secret_dict['eb_app_id'], secret_dict['eb_cert_id'])
-    info_results = am_finder(uri)
-
-    # keepa_finder = KeepaFinder(secret['secret_key'])
-    # info_results = keepa_finder(info)
-
-    # info_results = am_finder.run_loop_for_images(info_results)
-    asin_info = list(info_results.keys())
-
-    resps = api.execute('search', [{'q': info_results[asin]['title']} for asin in asin_info])
-
-    pr_all = len(list(info_results.keys()))
-    none = 0
-
-    for k in range(len(asin_info)):
-        print('ASIN:', asin_info[k])
-        print('Q:', info_results[asin_info[k]]['title'])
-
-        try:
-            resps[k].itemSummaries
-
-        except AttributeError:
-            none += 1
-
-        try:
-            for j in range(5):
-                print(resps[k].itemSummaries[j].itemId.split('|'))
-                print(resps[k].itemSummaries[j].title, '\n')
-
-        except (IndexError, AttributeError):
-            print('None\n')
-            continue
-
-        print('\n')
-
-    print('All:', pr_all, 'none:', none, '\n{:.2f}%'.format((none * 100) / pr_all))
-
-
-def run_finder_finding(uri):
-    from utils import ebay_finding_api
-
-    am_finder = AmazonFinder()
-    info_results = am_finder(uri)
-
-    # keepa_finder = KeepaFinder(secret['secret_key'])
-    # info_results = keepa_finder(info)
-
-    # info_results = am_finder.run_loop_for_images(info_results)
-    asin_info = list(info_results.keys())
-    pr_all = len(list(info_results.keys()))
-    none = 0
-
-    for asin in asin_info:
-        try:
-            response = ebay_finding_api.api.execute(
-                'findItemsByKeywords', {'keywords': info_results[asin]['title'].replace(',', ' ')}
-            )
-
-        except ebay_finding_api.connection_error:
-            continue
-
-        else:
-            if not int(response.reply.searchResult.get('_count')):
-                none += 1
-
-    print('All:', pr_all, 'none:', none, '\n{:.2f}%'.format((none * 100) / pr_all))
-
-
-if __name__ == '__main__':
-    run_finder('https://www.amazon.com/s?me=A30IB5N4GHQ6IG&marketplaceID=ATVPDKIKX0DER')
