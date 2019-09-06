@@ -209,7 +209,7 @@ us_states_abbr = {
 old_stats_days_live = 5
 
 # finder interface
-timeout = 5
+timeout = 60
 threshold_month_number = 3
 title_n_words = 8
 rank_drop_percentage = 10
