@@ -219,7 +219,7 @@ def add_pair(request):
 
             pair.amazon_minimum_price = new_pair.amazon_minimum_price
             pair.amazon_approximate_price = new_pair.amazon_approximate_price
-            pair.check_quantity()
+            pair.quantity = new_pair.quantity
             pair.save()
             return redirect('/')
 

@@ -272,7 +272,6 @@ secret_dict = get_secret(constants.secret_filename)
 # apis
 ebay_trading_api = ApiObject(secret_dict, 'ebay-trading')
 ebay_shopping_api = ApiObject(secret_dict, 'ebay-shopping')
-ebay_finding_api = ApiObject(secret_dict, 'ebay-finding')
 amazon_products_api = ApiObject(secret_dict, 'amazon-products', country=constants.amazon_region)
 amazon_orders_api = ApiObject(secret_dict, 'amazon-orders', country=constants.amazon_region)
 amazon_feeds_api = ApiObject(secret_dict, 'amazon-feeds', feed_types=constants.amazon_feed_types,
