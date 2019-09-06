@@ -50,7 +50,15 @@ LOGGING = {
             'filename': 'finder.log',
             'formatter': 'simple_formatter',
             'maxBytes': 104857600
-        }
+        },
+
+        'profits_file_handler': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'profits.log',
+            'formatter': 'simple_formatter',
+            'maxBytes': 104857600
+        },
     },
 
     'loggers': {
@@ -68,6 +76,11 @@ LOGGING = {
 
         'finder': {
             'handlers': ['finder_file_handler'],
+            'level': 'INFO'
+        },
+
+        'profits': {
+            'handlers': ['profits_file_handler'],
             'level': 'INFO'
         }
     }

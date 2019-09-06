@@ -66,10 +66,6 @@ def graphs(request):
     # users profits diagram
 
     plt.bar(usernumbers, profits, color='g')
-
-    for i, v in enumerate(profits):
-        plt.text(i - 0.2, v + 0.3, ' ' + str(v), va='center', fontweight='bold')
-
     plt.xticks(usernumbers, usernames)
     plt.ylabel('$')
     plt.title('Users profits', fontsize=20)
@@ -118,7 +114,14 @@ def graphs(request):
         plt.plot(dates, buybox_counts, c='g')
         plt.plot(dates, minimum_price_counts, c='b')
         plt.xticks(range(len(dates)), labels=dates)
-        plt.yticks(range(max(max(buybox_counts), max(minimum_price_counts)) + 1))
+
+        plt.yticks(
+            range(
+                min(min(buybox_counts), min(minimum_price_counts)),
+                max(max(buybox_counts), max(minimum_price_counts)) + 1
+            )
+        )
+
         plt.legend(['BB count', 'LP count'])
 
     plt.xlabel('Time')

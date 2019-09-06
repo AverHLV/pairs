@@ -1,9 +1,12 @@
 import logging
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+
 from config import constants
 
 logger = logging.getLogger('custom')
+profits_logger = logging.getLogger('profits')
 
 
 class CustomUser(AbstractUser):
@@ -53,9 +56,14 @@ class CustomUser(AbstractUser):
         """ Update profit of this user and all others in the established hierarchy """
 
         if increase:
-            self.profit += self.get_profit(profit, increase, save=True)
+            temp_profit = self.get_profit(profit, increase, save=True)
+            self.profit += temp_profit
+            profits_logger.info('Update: increase, value: {0}, user: {1}'.format(round(temp_profit, 2), self.username))
+
         else:
-            self.profit -= self.get_profit(profit, increase, save=True)
+            temp_profit = self.get_profit(profit, increase, save=True)
+            self.profit -= temp_profit
+            profits_logger.info('Update: decrease, value: {0}, user: {1}'.format(round(temp_profit, 2), self.username))
 
         self.save(update_fields=['profit'])
 
@@ -66,9 +74,20 @@ class CustomUser(AbstractUser):
         for level in levels:
             for user in CustomUser.objects.filter(profit_level=level):
                 if increase:
-                    user.profit += profit * profit_vector[level]
+                    temp_profit = profit * profit_vector[level]
+                    user.profit += temp_profit
+
+                    profits_logger.info(
+                        'Update: increase, value: {0}, user: {1}'.format(round(temp_profit, 2), user.username)
+                    )
+
                 else:
-                    user.profit -= profit * profit_vector[level]
+                    temp_profit = profit * profit_vector[level]
+                    user.profit -= temp_profit
+
+                    profits_logger.info(
+                        'Update: decrease, value: {0}, user: {1}'.format(round(temp_profit, 2), user.username)
+                    )
 
                 user.save(update_fields=['profit'])
 
@@ -91,9 +110,17 @@ class CustomUser(AbstractUser):
                 profit -= percentage
                 user.profit += round(percentage, 2)
 
+                profits_logger.info(
+                    'Update: increase, value: {0}, user: {1}'.format(round(percentage, 2), user.username)
+                )
+
             else:
                 percentage = (profit / (1 - constants.profit_percentage_special)) * constants.profit_percentage_special
                 user.profit -= round(percentage, 2)
+
+                profits_logger.info(
+                    'Update: decrease, value: {0}, user: {1}'.format(round(percentage, 2), user.username)
+                )
 
             if save:
                 user.save(update_fields=['profit'])
