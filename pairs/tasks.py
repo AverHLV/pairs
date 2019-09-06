@@ -1,9 +1,11 @@
 from django.utils.timezone import get_current_timezone
 from celery import shared_task
 from celery.utils.log import get_task_logger
+
 from datetime import datetime, timedelta
 from time import sleep
 from uuid import uuid4
+
 from config import constants
 from .models import Pair, Order, shipping_info_fields
 from .helpers import get_item_price_info
@@ -176,7 +178,7 @@ def update_pairs_quantity():
 
     # update quantities in db from eBay
 
-    for pair in Pair.objects.all().exclude(checked=4):
+    for pair in Pair.objects.all().exclude(checked__gte=4):
         pair.check_quantity()
         pair.save(update_fields=['quantity'])
 
