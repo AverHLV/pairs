@@ -11,7 +11,8 @@ from utils import ebay_trading_api, amazon_products_api
 from .helpers import get_item_price_info, check_profit
 from .models import Pair, NotAllowedSeller
 from .parsers import (
-    get_rank_from_response, get_delivery_time, get_ebay_price_from_response, get_seller_id_from_response
+    get_rank_from_response, get_delivery_time, get_ebay_price_from_response, get_seller_id_from_response,
+    get_ebay_quantity_from_response
 )
 
 logger = logging.getLogger('custom')
@@ -30,6 +31,7 @@ class PairForm(forms.ModelForm):
         self.amazon_price = 0
         self.amazon_minimum_price = 0
         self.amazon_approximate_price = 0
+        self.quantity = 0
         self.ebay_price = []
         self.old_data = old_data
         self.old_asin_not_changed = False
@@ -189,12 +191,6 @@ class PairForm(forms.ModelForm):
 
             # validation based on api response
 
-            '''
-            ebay_trading_api.check_calls(True, forms.ValidationError,
-                                         'eBay api calls number is over. Please try to add pair tomorrow in {0}.'
-                                         .format(ebay_trading_api.checker.start_time), code='eb8')
-            '''
-
             try:
                 response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
 
@@ -271,6 +267,10 @@ class PairForm(forms.ModelForm):
                 # getting eBay price
 
                 self.ebay_price.append(get_ebay_price_from_response(response))
+
+                # getting quantity
+
+                self.quantity += get_ebay_quantity_from_response(response)
 
         # checking all eBay prices
 
