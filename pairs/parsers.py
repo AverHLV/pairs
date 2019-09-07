@@ -1,13 +1,36 @@
 import logging
+
 from django.utils.timezone import get_current_timezone
-from urllib.request import urlopen
-from urllib.error import URLError
-from lxml.html import fromstring, HTMLParser
+from requests import get, exceptions
+from lxml import etree
+
 from re import search
 from datetime import datetime
-from config.constants import ebay_delivery_months
+
+from config import constants
 
 logger = logging.getLogger('custom')
+parser = etree.HTMLParser()
+current_timezone = get_current_timezone()
+
+
+def request(uri: str, headers: dict = None) -> str:
+    """ Make GET request to given uri """
+
+    try:
+        return get(uri, headers=headers, timeout=constants.requests_timeout).text
+
+    except exceptions.Timeout:
+        logger.critical('Parsers request: timeout occurred, uri: {}'.format(uri))
+
+    except exceptions.HTTPError as e:
+        logger.critical('Parsers request: http error: {0}, uri: {1}'.format(e, uri))
+
+    except exceptions.ConnectionError as e:
+        logger.critical('Parsers request: connection error: {0}, uri: {1}'.format(e, uri))
+
+
+# Amazon MWS response parsers
 
 
 def get_rank_from_response(response):
@@ -350,25 +373,88 @@ def get_no_buybox_price_from_response(asins_no_buybox, response):
                 asins_no_buybox[i] = asins_no_buybox[i], min(prices)
 
 
-def get_amazon_upc(asin):
-    """ Get item UPC from Amazon item page """
+# Custom response parsers
 
-    location = '//li[child::b[contains(text(), "UPC:")]]/text()'
 
-    try:
-        response = urlopen('https://www.amazon.com/dp/{0}/'.format(asin)).read().decode('utf8')
+def get_https_proxy() -> (str, None):
+    """ Get free HTTPS proxy """
 
-    except URLError as e:
-        logger.warning('URLError while getting upc: {0}'.format(e))
+    response = request('http://pubproxy.com/api/proxy?format=txt&https=true&country=US')
+
+    if response is None:
         return
 
-    tree = fromstring(response, parser=HTMLParser())
-    upc = tree.xpath(location)
+    return response
+
+
+def get_amazon_upc(asin: str) -> (list, None):
+    """ Get item UPC from Amazon item page """
+
+    response = request('https://www.amazon.com/dp/{}'.format(asin), headers={'Connection': 'close'})
+
+    if response is None:
+        return
+
+    tree = etree.fromstring(response, parser)
+    upc = tree.xpath('//li[child::b[contains(text(), "UPC:")]]/text()')
 
     if not len(upc):
         return
 
     return [upc_id for upc_id in upc[0].split(' ') if len(upc_id)]
+
+
+def get_delivery_time(ebay_id: str) -> (int, None):
+    """
+    Get delivery time in days from eBay item page
+
+    Warning! Server region must be the same as eBay trading region
+    """
+
+    response = request('https://www.ebay.com/itm/{}'.format(ebay_id), headers={'Connection': 'close'})
+
+    if response is None:
+        return
+
+    # find and parse date string in html response
+
+    tree = etree.fromstring(response, parser)
+
+    for location in ('//strong[@class="vi-acc-del-range"]/b/text()',
+                     '//strong[@class="vi-acc-del-range"]/text()',
+                     '//span[@class="vi-acc-del-range"]/b/text()',
+                     '//span[@class="vi-acc-del-range"]/text()'):
+        date = tree.xpath(location)
+
+        if len(date):
+            break
+
+    else:
+        return
+
+    date = search(r'[A-Z][a-z]{2}\. \d{1,2}', date[0])
+
+    if date is None:
+        return
+
+    date = date.group()
+
+    if not len(date):
+        return
+
+    # calculate number of delivery days
+
+    delivery_date = datetime.now(current_timezone).date()
+    delivery_date = delivery_date.replace(day=int(date[5:]), month=constants.ebay_delivery_months[date[:3]])
+    current_date = datetime.now(current_timezone).date()
+
+    if current_date > delivery_date:
+        return
+
+    return (delivery_date - current_date).days
+
+
+# eBay APIs response parsers
 
 
 def get_ebay_price_from_response(response):
@@ -428,59 +514,3 @@ def get_seller_id_from_response(response):
         return
 
     return seller_id
-
-
-def get_delivery_time(ebay_id):
-    """
-    Get delivery time in days from eBay item page
-
-    Warning! Server region must be the same as eBay trading region
-    """
-
-    possible_locations = [
-        '//strong[@class="vi-acc-del-range"]/b/text()',
-        '//span[@class="vi-acc-del-range"]/b/text()',
-        '//strong[@class="vi-acc-del-range"]/text()',
-        '//span[@class="vi-acc-del-range"]/text()'
-    ]
-
-    try:
-        response = urlopen('https://www.ebay.com/itm/{0}'.format(ebay_id)).read().decode('utf8')
-
-    except URLError as e:
-        logger.warning('URLError while getting delivery date: {0}'.format(e))
-        return
-
-    # find and parse date string in html response
-
-    tree = fromstring(response, parser=HTMLParser())
-
-    for location in possible_locations:
-        date = tree.xpath(location)
-
-        if len(date):
-            break
-
-    else:
-        return
-
-    date = search(r'[A-Z][a-z]{2}\. \d{1,2}', date[0])
-
-    if date is None:
-        return
-
-    date = date.group()
-
-    if not len(date):
-        return
-
-    # calculate number of delivery days
-
-    delivery_date = datetime.now(get_current_timezone()).date()
-    delivery_date = delivery_date.replace(day=int(date[5:]), month=ebay_delivery_months[date[:3]])
-    current_date = datetime.now(get_current_timezone()).date()
-
-    if current_date > delivery_date and current_date.month == 12 and delivery_date.month in (1, 2, 3):
-        delivery_date = delivery_date.replace(year=delivery_date.year + 1)
-
-    return (delivery_date - current_date).days

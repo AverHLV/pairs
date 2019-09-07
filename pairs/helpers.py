@@ -1,5 +1,6 @@
 from re import fullmatch
 from time import sleep
+
 from config import constants
 from utils import amazon_products_api
 from .parsers import get_buybox_price_from_response, get_no_buybox_price_from_response, get_my_price_from_response
