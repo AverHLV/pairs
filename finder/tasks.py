@@ -61,16 +61,16 @@ def run_finder(uri: str, save: bool = False, username: str = 'aver') -> None:
             if float(response.reply.Item.Seller.PositiveFeedbackPercent) <= constants.ebay_min_positive_percentage:
                 continue
 
+            # check for item seller status
+
+            if get_seller_id_from_response(response) in blacklist:
+                continue
+
             # item delivery time
 
             delivery_time = get_delivery_time(ebay_id)
 
             if delivery_time is None or delivery_time > constants.ebay_max_delivery_time:
-                continue
-
-            # check for item seller status
-
-            if get_seller_id_from_response(response) in blacklist:
                 continue
 
             # getting eBay price

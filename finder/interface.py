@@ -87,7 +87,7 @@ class AmazonFinder(object):
             logger.critical('Server refused the request, url: {}'.format(uri))
 
     async def _get_first_page(self) -> None:
-        """ Get first _products page for number of pages """
+        """ Get first products page for number of pages """
 
         self._pages.append(etree.fromstring(await self._request(self._amazon_uri.format(page_number=1)), self._parser))
 
