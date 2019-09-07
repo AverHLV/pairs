@@ -49,10 +49,10 @@ class AmazonFinder(object):
         self._amazon_uri = sub(r'&page=\d+', '', uri) + '&page={page_number}'
 
     @log_work_time('AmazonFinder')
-    def __call__(self, uri: str) -> dict:
+    def __call__(self, *args, **kwargs) -> dict:
         """ Reinitialize for new uri and find products info """
 
-        self.__init__(uri)
+        self.__init__(*args, **kwargs)
         self._run_loop()
 
         if self._pages_number is None:
