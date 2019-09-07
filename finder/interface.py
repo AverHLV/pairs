@@ -102,6 +102,10 @@ class AmazonFinder(object):
         except client_exceptions.ServerDisconnectedError:
             logger.critical('Server refused the request, url: {}'.format(uri))
 
+        except client_exceptions.ClientHttpProxyError as e:
+            self._proxy = None
+            logger.critical('Proxy response error, disabling proxy, error: {}'.format(e))
+
     async def _get_first_page(self) -> None:
         """ Get first products page for number of pages """
 
