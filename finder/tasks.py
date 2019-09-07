@@ -19,7 +19,7 @@ keepa_finder = KeepaFinder(secret_dict['keepa_key'])
 
 @shared_task(name='Run finder')
 @log_work_time('Run finder task')
-def run_finder(uri: str, save: bool = False, username: str = 'aver', use_proxy: bool = True) -> None:
+def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'aver') -> None:
     """ Find pairs in Amazon and eBay """
 
     from pairs.models import Pair, NotAllowedSeller
