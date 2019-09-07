@@ -25,12 +25,14 @@ class AmazonFinder(object):
     _timeout = ClientTimeout(total=constants.timeout)
     _ebay_uri = 'https://www.ebay.com/sch/i.html'
     _ebay_params = {'_nkw': '', '_ipg': 100, 'LH_BIN': 1, 'LH_ItemCondition': 3, 'LH_PrefLoc': 1, 'LH_RPA': 1}
+    _proxy_uri = 'http://pubproxy.com/api/proxy?format=txt&type=http&country=US'
 
-    def __init__(self, uri: str = None):
+    def __init__(self, uri: str = None, use_proxy: bool = True):
         """
         AmazonFinder initialization
 
         :param uri: Amazon search uri
+        :param use_proxy: use proxy for requests to Amazon or not
         """
 
         if uri is None:
@@ -38,9 +40,12 @@ class AmazonFinder(object):
 
         self._session = None
         self._pages_number = None
+        self._proxy = None
         self._pages = []
         self._asins = []
         self._products = {}
+
+        self._use_proxy = use_proxy
         self._amazon_uri = sub(r'&page=\d+', '', uri) + '&page={page_number}'
 
     @log_work_time('AmazonFinder')
@@ -49,20 +54,31 @@ class AmazonFinder(object):
 
         self.__init__(uri)
         self._run_loop()
+
+        if self._pages_number is None:
+            return {}
+
         self._process_pages()
         self._asins = list(self._products.keys())
         self._run_loop(ebay=True)
         self._process_pages(ebay=True)
+
+        if not len(self._asins):
+            logger.critical('No asins for getting prices')
+            return {}
+
         self._get_prices()
+
         return self._products
 
-    async def _request(self, uri: str, search_term: str = None, params: dict = None) -> str:
+    async def _request(self, uri: str, search_term: str = None, params: dict = None, proxy: str = None) -> str:
         """
         Send GET request
 
         :param uri: request uri
         :param search_term: uri parameters
         :param params: uri parameters
+        :param proxy: request proxy
         :return: html str response
         """
 
@@ -71,7 +87,7 @@ class AmazonFinder(object):
             params = self._ebay_params
 
         try:
-            async with self._session.get(uri, params=params) as response:
+            async with self._session.get(uri, params=params, proxy=proxy) as response:
                 return await response.text()
 
         except client_exceptions.ServerTimeoutError:
@@ -87,9 +103,15 @@ class AmazonFinder(object):
             logger.critical('Server refused the request, url: {}'.format(uri))
 
     async def _get_first_page(self) -> None:
-        """ Get first _products page for number of pages """
+        """ Get first products page for number of pages """
 
-        self._pages.append(etree.fromstring(await self._request(self._amazon_uri.format(page_number=1)), self._parser))
+        response = await self._request(self._amazon_uri.format(page_number=1), proxy=self._proxy)
+
+        if response is None:
+            logger.critical('Getting pages number failed while first request')
+            return
+
+        self._pages.append(etree.fromstring(response, self._parser))
 
         try:
             self._pages_number = int(self._pages[0].xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
@@ -106,7 +128,8 @@ class AmazonFinder(object):
 
         if not ebay:
             responses = await asyncio.gather(
-                *[self._request(self._amazon_uri.format(page_number=page)) for page in range(self._pages_number + 1)],
+                *[self._request(self._amazon_uri.format(page_number=page), proxy=self._proxy)
+                  for page in range(self._pages_number + 1)],
                 return_exceptions=True
             )
 
@@ -146,6 +169,19 @@ class AmazonFinder(object):
 
         try:
             if not ebay:
+                if self._use_proxy:
+                    # get proxy
+
+                    self._proxy = loop.run_until_complete(self._request(self._proxy_uri))
+
+                    if self._proxy is None:
+                        logger.warning('AmazonFinder: getting proxy failed')
+
+                    else:
+                        self._proxy = 'http://' + self._proxy
+
+                # start sending requests
+
                 loop.run_until_complete(self._get_first_page())
 
                 if self._pages_number is None:
@@ -271,6 +307,9 @@ class KeepaFinder(object):
     @log_work_time('KeepaFinder')
     def __call__(self, products: list) -> list:
         """ Find and analyze Amazon products statistics """
+
+        if not len(products):
+            return []
 
         self._products = {}
         self._products_history(products)

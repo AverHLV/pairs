@@ -75,6 +75,7 @@ pair_unsuitable_days_live = 7
 amazon_workflow_delay = 180  # seconds
 check_after_delay = 3600  # seconds
 price_digits = 3
+requests_timeout = 60
 
 # pairs parsers
 
