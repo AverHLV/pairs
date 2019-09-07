@@ -376,17 +376,6 @@ def get_no_buybox_price_from_response(asins_no_buybox, response):
 # Custom response parsers
 
 
-def get_https_proxy() -> (str, None):
-    """ Get free HTTPS proxy """
-
-    response = request('http://pubproxy.com/api/proxy?format=txt&https=true&country=US')
-
-    if response is None:
-        return
-
-    return response
-
-
 def get_amazon_upc(asin: str) -> (list, None):
     """ Get item UPC from Amazon item page """
 

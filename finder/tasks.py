@@ -3,6 +3,7 @@ from celery.utils.log import get_task_logger
 
 from config import constants
 from utils import ebay_trading_api, secret_dict
+from decorators import log_work_time
 from pairs.helpers import check_profit
 
 from pairs.parsers import (
@@ -17,13 +18,14 @@ keepa_finder = KeepaFinder(secret_dict['keepa_key'])
 
 
 @shared_task(name='Run finder')
-def run_finder(uri: str, save: bool = False, username: str = 'aver') -> None:
+@log_work_time('Run finder task')
+def run_finder(uri: str, save: bool = False, username: str = 'aver', use_proxy: bool = True) -> None:
     """ Find pairs in Amazon and eBay """
 
     from pairs.models import Pair, NotAllowedSeller
     from users.models import CustomUser
 
-    info_results = am_finder(uri)
+    info_results = am_finder(uri, use_proxy)
 
     if not len(info_results):
         logger.critical('Empty Amazon products info results')
