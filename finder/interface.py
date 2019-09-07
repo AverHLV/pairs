@@ -27,7 +27,7 @@ class AmazonFinder(object):
     _ebay_params = {'_nkw': '', '_ipg': 100, 'LH_BIN': 1, 'LH_ItemCondition': 3, 'LH_PrefLoc': 1, 'LH_RPA': 1}
     _proxy_uri = 'http://pubproxy.com/api/proxy?format=txt&type=http&country=US'
 
-    def __init__(self, uri: str = None, use_proxy: bool = True):
+    def __init__(self, uri: str = None, use_proxy: bool = False):
         """
         AmazonFinder initialization
 
@@ -101,6 +101,10 @@ class AmazonFinder(object):
 
         except client_exceptions.ServerDisconnectedError:
             logger.critical('Server refused the request, url: {}'.format(uri))
+
+        except client_exceptions.ClientHttpProxyError as e:
+            self._proxy = None
+            logger.critical('Proxy response error, disabling proxy, error: {}'.format(e))
 
     async def _get_first_page(self) -> None:
         """ Get first products page for number of pages """
