@@ -234,9 +234,9 @@ class AmazonFinder(object):
 
                 for ebay_id_number, response in enumerate(responses[i:i + len(self._products[asin]['ebay_ids'])]):
                     if isinstance(response, str):
-                        page = etree.fromstring(response, self._parser)
+                        delivery_date = parse_delivery_time_response(etree.fromstring(response, self._parser))
 
-                        if parse_delivery_time_response(page) >= constants.ebay_max_delivery_time:
+                        if delivery_date is not None and delivery_date >= constants.ebay_max_delivery_time:
                             ebay_ids_to_delete.append(self._products[asin]['ebay_ids'][ebay_id_number])
 
                     else:
