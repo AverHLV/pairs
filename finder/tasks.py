@@ -28,7 +28,6 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         return
 
     pairs = {}
-    products_all_number = len(info_results.keys())
 
     # find pairs info on eBay and validate items data
 
@@ -95,4 +94,4 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         if save:
             pairs[asin].save()
 
-    print('All:', products_all_number, 'pairs number:', pairs_number)
+    print('Pairs number:', pairs_number)

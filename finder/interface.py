@@ -12,6 +12,7 @@ from re import sub
 
 from config import constants
 from pairs.helpers import get_item_price_info
+from pairs.parsers import parse_delivery_time_response
 from decorators import log_work_time
 from utils import secret_dict
 
@@ -25,6 +26,7 @@ class AmazonFinder(object):
     _parser = etree.HTMLParser()
     _timeout = ClientTimeout(total=constants.timeout)
     _ebay_uri = 'https://www.ebay.com/sch/i.html'
+    _ebay_item_uri = 'https://www.ebay.com/itm/'
     _ebay_params = {'_nkw': '', '_ipg': 100, 'LH_BIN': 1, 'LH_ItemCondition': 3, 'LH_PrefLoc': 1, 'LH_RPA': 1}
     _proxy_uri = 'https://proxy11.com/api/proxy.txt?key={}&country=United+States'
 
@@ -43,7 +45,6 @@ class AmazonFinder(object):
         self._session = None
         self._pages_number = None
         self._proxy = None
-        self._pages = []
         self._asins = []
         self._products = {}
 
@@ -60,20 +61,27 @@ class AmazonFinder(object):
 
         self.__init__(*args, **kwargs)
         self._run_loop()
+        self._asins = list(self._products.keys())
 
-        if self._pages_number is None:
+        if not len(self._asins):
+            logger.critical('Empty asins list after getting Amazon info')
             return {}
 
-        self._process_pages()
-        self._asins = list(self._products.keys())
-        self._run_loop(ebay=True)
-        self._process_pages(ebay=True)
+        logger.info('All items number: {}'.format(len(self._asins)))
+        self._run_loop(send_type='ebay')
+
+        if not len(self._asins):
+            logger.critical('No asins for getting delivery times')
+            return {}
+
+        self._run_loop(send_type='delivery')
 
         if not len(self._asins):
             logger.critical('No asins for getting prices')
             return {}
 
         self._get_prices()
+        logger.info('Amazon: final items number: {}'.format(len(self._asins)))
 
         return self._products
 
@@ -143,56 +151,110 @@ class AmazonFinder(object):
             logger.critical('Getting pages number failed while first request')
             return
 
-        self._pages.append(etree.fromstring(response, self._parser))
+        page = etree.fromstring(response, self._parser)
+        self._find_products_info(page)
 
         try:
-            self._pages_number = int(self._pages[0].xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
+            self._pages_number = int(page.xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
 
         except (IndexError, ValueError) as e:
             logger.critical('Getting pages number failed, parse error: {}'.format(e))
 
-    async def _send_requests(self, ebay: bool) -> None:
-        """ Gather products lists pages via GET requests """
+    async def _send_requests(self, send_type: str) -> None:
+        """
+        Gather products lists pages via GET requests
 
-        self._pages = []
+        :param send_type: send requests type:
+            amazon - Amazon search uri
+            ebay - eBay search
+            delivery - eBay delivery time
+        """
 
         # make requests
 
-        if not ebay:
+        if send_type == 'amazon':
             responses = await asyncio.gather(
                 *[self._request(self._amazon_uri.format(page_number=page), proxy=self._proxy)
                   for page in range(self._pages_number + 1)],
                 return_exceptions=True
             )
 
-        else:
+        elif send_type == 'ebay':
             responses = await asyncio.gather(
                 *[self._request(self._ebay_uri, search_term=self._products[asin]['title']) for asin in self._asins],
                 return_exceptions=True
+            )
+
+        else:
+            ebay_ids = []
+
+            for asin in self._asins:
+                ebay_ids += self._products[asin]['ebay_ids']
+
+            responses = await asyncio.gather(
+                *[self._request(self._ebay_item_uri + ebay_id) for ebay_id in ebay_ids], return_exceptions=True
             )
 
         # parse responses
 
         values_to_delete = []
 
-        for i in range(len(responses)):
-            if isinstance(responses[i], str):
-                self._pages.append(etree.fromstring(responses[i], self._parser))
+        if send_type != 'delivery':
+            for i in range(len(responses)):
+                if isinstance(responses[i], str):
+                    page = etree.fromstring(responses[i], self._parser)
 
-            else:
-                if ebay:
-                    self._products.pop(self._asins[i])
-                    values_to_delete.append(self._asins[i])
+                    if send_type == 'amazon':
+                        self._find_products_info(page)
 
-                logger.warning('Getting item info error: {}'.format(responses[i]))
+                    else:
+                        ebay_ids = self._find_ebay_products_info(page)
+
+                        if ebay_ids is not None:
+                            self._products[self._asins[i]]['ebay_ids'] = ebay_ids
+
+                        else:
+                            self._products.pop(self._asins[i])
+                            values_to_delete.append(self._asins[i])
+
+                else:
+                    if send_type == 'ebay':
+                        self._products.pop(self._asins[i])
+                        values_to_delete.append(self._asins[i])
+
+                    logger.warning('Getting item info error: {}'.format(responses[i]))
+
+        else:
+            i = 0
+
+            for asin in self._asins:
+                # check all ebay ids for one asin
+
+                for ebay_id_number, response in enumerate(responses[i:i + len(self._products[asin]['ebay_ids'])]):
+                    if isinstance(response, str):
+                        page = etree.fromstring(response, self._parser)
+
+                        if parse_delivery_time_response(page) >= constants.ebay_max_delivery_time:
+                            del self._products[asin]['ebay_ids'][ebay_id_number]
+
+                    else:
+                        del self._products[asin]['ebay_ids'][ebay_id_number]
+
+                # delete asin if all ebay ids did not pass the test
+
+                if not len(self._products[asin]['ebay_ids']):
+                    self._products.pop(asin)
+                    values_to_delete.append(asin)
+
+                i += len(self._products[asin]['ebay_ids'])
 
         # delete asins
 
-        if ebay:
+        if len(values_to_delete):
             for value in values_to_delete:
                 self._asins.remove(value)
 
-    def _run_loop(self, ebay: bool = False) -> None:
+    def _run_loop(self, send_type: str = 'amazon') -> None:
         """ Run ioloop and wait until all requests will be done """
 
         loop = asyncio.new_event_loop()
@@ -200,7 +262,7 @@ class AmazonFinder(object):
         self._session = ClientSession(headers=self._headers, timeout=self._timeout)
 
         try:
-            if not ebay:
+            if send_type == 'amazon':
                 if self._use_proxy:
                     loop.run_until_complete(self._find_proxy())
 
@@ -213,10 +275,10 @@ class AmazonFinder(object):
                     return
 
                 if self._pages_number > 1:
-                    loop.run_until_complete(self._send_requests(ebay))
+                    loop.run_until_complete(self._send_requests(send_type))
 
             else:
-                loop.run_until_complete(self._send_requests(ebay))
+                loop.run_until_complete(self._send_requests(send_type))
 
         finally:
             loop.run_until_complete(self._session.close())
@@ -274,33 +336,6 @@ class AmazonFinder(object):
 
         if len(ebay_ids):
             return ebay_ids
-
-    def _process_pages(self, ebay: bool = False) -> None:
-        """ Process previously found pages """
-
-        if not len(self._pages):
-            logger.critical('Pages list is empty')
-            return
-
-        if not ebay:
-            for page in self._pages:
-                self._find_products_info(page)
-
-        else:
-            values_to_delete = []
-
-            for i in range(len(self._pages)):
-                ebay_ids = self._find_ebay_products_info(self._pages[i])
-
-                if ebay_ids is not None:
-                    self._products[self._asins[i]]['ebay_ids'] = ebay_ids
-
-                else:
-                    self._products.pop(self._asins[i])
-                    values_to_delete.append(self._asins[i])
-
-            for value in values_to_delete:
-                self._asins.remove(value)
 
     def _get_prices(self) -> None:
         """ Receive lowest prices for products """
