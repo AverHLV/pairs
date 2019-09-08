@@ -230,15 +230,21 @@ class AmazonFinder(object):
             for asin in self._asins:
                 # check all ebay ids for one asin
 
+                ebay_ids_to_delete = []
+
                 for ebay_id_number, response in enumerate(responses[i:i + len(self._products[asin]['ebay_ids'])]):
                     if isinstance(response, str):
                         page = etree.fromstring(response, self._parser)
 
                         if parse_delivery_time_response(page) >= constants.ebay_max_delivery_time:
-                            del self._products[asin]['ebay_ids'][ebay_id_number]
+                            ebay_ids_to_delete.append(self._products[asin]['ebay_ids'][ebay_id_number])
 
                     else:
-                        del self._products[asin]['ebay_ids'][ebay_id_number]
+                        ebay_ids_to_delete.append(self._products[asin]['ebay_ids'][ebay_id_number])
+
+                if len(ebay_ids_to_delete):
+                    for value in ebay_ids_to_delete:
+                        self._products[asin]['ebay_ids'].remove(value)
 
                 # delete asin if all ebay ids did not pass the test
 
