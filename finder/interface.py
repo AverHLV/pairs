@@ -13,26 +13,28 @@ from re import sub
 from config import constants
 from pairs.helpers import get_item_price_info
 from decorators import log_work_time
+from utils import secret_dict
 
 logger = logging.getLogger('finder')
 
 
 class AmazonFinder(object):
-    """ Amazon _products information finder """
+    """ Amazon products information finder """
 
     _headers = {'Connection': 'close'}
     _parser = etree.HTMLParser()
     _timeout = ClientTimeout(total=constants.timeout)
     _ebay_uri = 'https://www.ebay.com/sch/i.html'
     _ebay_params = {'_nkw': '', '_ipg': 100, 'LH_BIN': 1, 'LH_ItemCondition': 3, 'LH_PrefLoc': 1, 'LH_RPA': 1}
-    _proxy_uri = 'http://pubproxy.com/api/proxy?format=txt&type=http&country=US'
+    _proxy_uri = 'https://proxy11.com/api/proxy.txt?key={}&country=United+States'
 
-    def __init__(self, uri: str = None, use_proxy: bool = False):
+    def __init__(self, uri: str = None, use_proxy: bool = False, proxy_tries: int = constants.proxy_find_tries):
         """
         AmazonFinder initialization
 
         :param uri: Amazon search uri
         :param use_proxy: use proxy for requests to Amazon or not
+        :param proxy_tries: number of tries to find alive proxy
         """
 
         if uri is None:
@@ -46,6 +48,10 @@ class AmazonFinder(object):
         self._products = {}
 
         self._use_proxy = use_proxy
+
+        if self._use_proxy:
+            self._proxy_uri = self._proxy_uri.format(secret_dict['proxy_api_key']) + '&limit={}'.format(proxy_tries)
+
         self._amazon_uri = sub(r'&page=\d+', '', uri) + '&page={page_number}'
 
     @log_work_time('AmazonFinder')
@@ -93,11 +99,14 @@ class AmazonFinder(object):
         except client_exceptions.ServerTimeoutError:
             logger.critical('Request timeout error, url: {}'.format(uri))
 
-        except client_exceptions.ClientConnectorError:
-            logger.critical('Request connection error, url: {}'.format(uri))
+        except client_exceptions.ClientConnectorError as e:
+            logger.critical('Request connection error: {0}, url: {1}'.format(e, uri))
 
         except client_exceptions.ClientOSError:
             logger.critical('Request connection reset, url: {}'.format(uri))
+
+        except client_exceptions.InvalidURL as e:
+            logger.critical('Invalid url: {}'.format(e))
 
         except client_exceptions.ServerDisconnectedError:
             logger.critical('Server refused the request, url: {}'.format(uri))
@@ -105,6 +114,25 @@ class AmazonFinder(object):
         except client_exceptions.ClientHttpProxyError as e:
             self._proxy = None
             logger.critical('Proxy response error, disabling proxy, error: {}'.format(e))
+
+    async def _find_proxy(self) -> None:
+        """ Find proxy and check aliveness """
+
+        proxies = await self._request(self._proxy_uri)
+
+        if proxies is None:
+            logger.warning('AmazonFinder: getting proxy failed')
+
+        for proxy in proxies.split('\n'):
+            self._proxy = 'http://' + proxy
+            await self._get_first_page()
+
+            if self._pages_number is not None:
+                logger.info('Proxy works fine! Url: {}'.format(self._proxy))
+                break
+
+        else:
+            logger.critical('Getting alive proxy failed')
 
     async def _get_first_page(self) -> None:
         """ Get first products page for number of pages """
@@ -121,7 +149,7 @@ class AmazonFinder(object):
             self._pages_number = int(self._pages[0].xpath(r'//ul[@class="a-pagination"]/li[6]/text()')[0])
 
         except (IndexError, ValueError) as e:
-            logger.critical('Getting pages number failed, error: {}'.format(e))
+            logger.critical('Getting pages number failed, parse error: {}'.format(e))
 
     async def _send_requests(self, ebay: bool) -> None:
         """ Gather products lists pages via GET requests """
@@ -174,24 +202,17 @@ class AmazonFinder(object):
         try:
             if not ebay:
                 if self._use_proxy:
-                    # get proxy
-
-                    self._proxy = loop.run_until_complete(self._request(self._proxy_uri))
-
-                    if self._proxy is None:
-                        logger.warning('AmazonFinder: getting proxy failed')
-
-                    else:
-                        self._proxy = 'http://' + self._proxy
+                    loop.run_until_complete(self._find_proxy())
 
                 # start sending requests
 
-                loop.run_until_complete(self._get_first_page())
+                if self._pages_number is None:
+                    loop.run_until_complete(self._get_first_page())
 
                 if self._pages_number is None:
                     return
 
-                elif self._pages_number > 1:
+                if self._pages_number > 1:
                     loop.run_until_complete(self._send_requests(ebay))
 
             else:
