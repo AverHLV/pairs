@@ -209,8 +209,12 @@ us_states_abbr = {
 # repricer tasks
 old_stats_days_live = 5
 
+# logs helpers
+return_last_n_lines = 300
+
 # finder interface
 timeout = 60
+proxy_find_tries = 4
 threshold_month_number = 3
 title_n_words = 8
 rank_drop_percentage = 10

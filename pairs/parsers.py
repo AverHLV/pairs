@@ -400,14 +400,16 @@ def get_delivery_time(ebay_id: str) -> (int, None):
     Warning! Server region must be the same as eBay trading region
     """
 
-    response = request('https://www.ebay.com/itm/{}'.format(ebay_id), headers={'Connection': 'close'})
+    response = request('https://www.ebay.com/itm/' + ebay_id)
 
     if response is None:
         return
 
-    # find and parse date string in html response
+    return parse_delivery_time_response(etree.fromstring(response, parser))
 
-    tree = etree.fromstring(response, parser)
+
+def parse_delivery_time_response(tree: etree) -> (int, None):
+    """ Find and parse date string in html response """
 
     for location in ('//strong[@class="vi-acc-del-range"]/b/text()',
                      '//strong[@class="vi-acc-del-range"]/text()',

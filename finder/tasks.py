@@ -5,11 +5,7 @@ from config import constants
 from utils import ebay_trading_api, secret_dict
 from decorators import log_work_time
 from pairs.helpers import check_profit
-
-from pairs.parsers import (
-    get_delivery_time, get_seller_id_from_response, get_ebay_price_from_response, get_ebay_quantity_from_response
-)
-
+from pairs.parsers import get_ebay_price_from_response, get_ebay_quantity_from_response
 from .interface import AmazonFinder, KeepaFinder
 
 logger = get_task_logger(__name__)
@@ -22,7 +18,7 @@ keepa_finder = KeepaFinder(secret_dict['keepa_key'])
 def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'aver') -> None:
     """ Find pairs in Amazon and eBay """
 
-    from pairs.models import Pair, NotAllowedSeller
+    from pairs.models import Pair
     from users.models import CustomUser
 
     info_results = am_finder(uri, use_proxy)
@@ -32,8 +28,6 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         return
 
     pairs = {}
-    products_all_number = len(info_results.keys())
-    blacklist = [na_seller.ebay_user_id for na_seller in NotAllowedSeller.objects.all()]
 
     # find pairs info on eBay and validate items data
 
@@ -47,32 +41,16 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         ebay_ids = []
         ebay_price = []
 
+        print('ASIN:', asin)
+        print('Title:', info_results[asin]['title'])
+        print('eBay ids:', info_results[asin]['ebay_ids'])
+
         for ebay_id in info_results[asin]['ebay_ids']:
             try:
                 response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
 
             except ebay_trading_api.connection_error as e:
                 logger.warning('eBay api unhandled error: {}'.format(e))
-                continue
-
-            # checking seller statistics
-
-            if int(response.reply.Item.Seller.FeedbackScore) <= constants.ebay_min_feedback_score:
-                continue
-
-            if float(response.reply.Item.Seller.PositiveFeedbackPercent) <= constants.ebay_min_positive_percentage:
-                continue
-
-            # check for item seller status
-
-            if get_seller_id_from_response(response) in blacklist:
-                continue
-
-            # item delivery time
-
-            delivery_time = get_delivery_time(ebay_id)
-
-            if delivery_time is None or delivery_time > constants.ebay_max_delivery_time:
                 continue
 
             # getting eBay price
@@ -116,4 +94,4 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         if save:
             pairs[asin].save()
 
-    print('All:', products_all_number, 'pairs number:', pairs_number)
+    print('Pairs number:', pairs_number)
