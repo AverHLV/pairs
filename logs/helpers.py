@@ -1,7 +1,7 @@
 from config import constants
 
 
-def tail(filename: str, n: int = constants.return_last_n_lines):
+def tail(filename: str, n: int = constants.return_last_n_lines) -> list:
     """ Return last n lines from the file """
 
     try:
@@ -17,8 +17,11 @@ def tail(filename: str, n: int = constants.return_last_n_lines):
         raise ValueError('Specified file not found: {0}'.format(filename))
 
 
-def process_log_strings(strings):
+def process_log_strings(strings: list) -> list:
     """ Mark given lines like blocks with newlines and color """
+
+    if strings is None:
+        return []
 
     mark_as_red = False
     appended_string = ''
