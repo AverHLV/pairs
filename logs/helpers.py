@@ -11,7 +11,7 @@ def tail(filename: str, n: int = constants.return_last_n_lines) -> list:
             if n >= len(lines):
                 return lines
 
-            return lines[len(lines) - n:]
+            return lines[-n:]
 
     except IOError:
         raise ValueError('Specified file not found: {0}'.format(filename))
