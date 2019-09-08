@@ -209,6 +209,9 @@ us_states_abbr = {
 # repricer tasks
 old_stats_days_live = 5
 
+# logs helpers
+return_last_n_lines = 300
+
 # finder interface
 timeout = 60
 threshold_month_number = 3

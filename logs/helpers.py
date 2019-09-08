@@ -1,34 +1,17 @@
-import mmap
-from os import name as os_name
+from config import constants
 
 
-def tail(filename, n=-1):
+def tail(filename: str, n: int = constants.return_last_n_lines):
     """ Return last n lines from the file """
 
     try:
-        with open(filename, 'rb') as file:
-            if os_name == 'nt':
-                # Windows mmap
+        with open(filename) as file:
+            lines = file.readlines()
 
-                filemap = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-            else:
-                # *nix mmap
+            if n >= len(lines):
+                return lines
 
-                filemap = mmap.mmap(file.fileno(), 0, mmap.MAP_SHARED, mmap.PROT_READ)
-
-            strings = []
-
-            try:
-                strings = filemap[:].splitlines()
-
-                if n != -1:
-                    strings = strings[len(strings) - n:len(strings)]
-
-                strings = [str(string)[2:-1] for string in strings]
-
-            finally:
-                filemap.close()
-                return strings
+            return lines[len(lines) - n:]
 
     except IOError:
         raise ValueError('Specified file not found: {0}'.format(filename))
