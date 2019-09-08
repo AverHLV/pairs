@@ -1,9 +1,8 @@
 Django==2.0.12
 django-crispy-forms==1.7.2
 celery==4.3.0
-django-celery-beat==1.4.0
+django-celery-beat==1.5.0
 psycopg2==2.8.2
-psycopg2-binary==2.8.2
 unipath==1.1
 ebaysdk==2.1.5
 mws==0.8.6
