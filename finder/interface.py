@@ -85,7 +85,12 @@ class AmazonFinder(object):
 
         return self._products
 
-    async def _request(self, uri: str, search_term: str = None, params: dict = None, proxy: str = None) -> str:
+    async def _request(self,
+                       uri: str,
+                       search_term: str = None,
+                       params: dict = None,
+                       proxy: str = None,
+                       delay: bool = False) -> str:
         """
         Send GET request
 
@@ -93,8 +98,12 @@ class AmazonFinder(object):
         :param search_term: uri parameters
         :param params: uri parameters
         :param proxy: request proxy
+        :param delay: add async sleep before request
         :return: html str response
         """
+
+        if delay:
+            await asyncio.sleep(constants.request_delay)
 
         if search_term is not None:
             self._ebay_params['_nkw'] = search_term
@@ -174,14 +183,15 @@ class AmazonFinder(object):
 
         if send_type == 'amazon':
             responses = await asyncio.gather(
-                *[self._request(self._amazon_uri.format(page_number=page), proxy=self._proxy)
+                *[self._request(self._amazon_uri.format(page_number=page), proxy=self._proxy, delay=True)
                   for page in range(self._pages_number + 1)],
                 return_exceptions=True
             )
 
         elif send_type == 'ebay':
             responses = await asyncio.gather(
-                *[self._request(self._ebay_uri, search_term=self._products[asin]['title']) for asin in self._asins],
+                *[self._request(self._ebay_uri, search_term=self._products[asin]['title'], delay=True)
+                  for asin in self._asins],
                 return_exceptions=True
             )
 
@@ -192,7 +202,8 @@ class AmazonFinder(object):
                 ebay_ids += self._products[asin]['ebay_ids']
 
             responses = await asyncio.gather(
-                *[self._request(self._ebay_item_uri + ebay_id) for ebay_id in ebay_ids], return_exceptions=True
+                *[self._request(self._ebay_item_uri + ebay_id, delay=True) for ebay_id in ebay_ids],
+                return_exceptions=True
             )
 
         # parse responses
