@@ -16,6 +16,15 @@ class TestLogsView(TestCase):
         request = self.factory.get('/')
         request.user = self.user
 
+        response = logs(request, 'main')
+        self.assertEqual(response.status_code, 200)
+
+        response = logs(request, 'profits')
+        self.assertEqual(response.status_code, 200)
+
+        response = logs(request, 'finder')
+        self.assertEqual(response.status_code, 200)
+
         response = logs(request, 'default')
         self.assertEqual(response.status_code, 200)
 

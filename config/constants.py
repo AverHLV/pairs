@@ -13,6 +13,10 @@ xml_message_delete_product_filename = base_dir.child('templates_xml').child('mes
 
 # logs paths
 
+main_log_path = base_dir.child('main.log')
+profits_log_path = base_dir.child('profits.log')
+finder_log_path = base_dir.child('finder.log')
+
 if os_name == 'nt':
     default_log_path = base_dir.ancestor(1).child('logs').child('default_err.log')
     workflow_log_path = base_dir.ancestor(1).child('logs').child('workflow_err.log')
@@ -214,6 +218,7 @@ return_last_n_lines = 300
 
 # finder interface
 timeout = 60
+request_delay = 60
 proxy_find_tries = 4
 threshold_month_number = 3
 title_n_words = 8
