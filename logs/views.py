@@ -11,7 +11,16 @@ from .helpers import tail, process_log_strings
 def logs(request, log_type: str):
     """ Get and display specified log tail """
 
-    if log_type == 'default':
+    if log_type == 'main':
+        log = tail(constants.main_log_path)
+
+    elif log_type == 'profits':
+        log = tail(constants.profits_log_path)
+
+    elif log_type == 'finder':
+        log = tail(constants.finder_log_path)
+
+    elif log_type == 'default':
         log = tail(constants.default_log_path)
 
     elif log_type == 'workflow':
