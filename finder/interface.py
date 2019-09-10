@@ -357,7 +357,7 @@ class AmazonFinder(object):
             if ebay_id is None:
                 continue
 
-            ebay_id = ebay_id.group()[0][1:-1]
+            ebay_id = ebay_id.group()[1:-1]
 
             if len(ebay_id) != constants.ebay_id_length or ebay_id in ebay_ids:
                 continue
