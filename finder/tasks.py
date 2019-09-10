@@ -1,5 +1,4 @@
-from celery import shared_task
-from celery.utils.log import get_task_logger
+import logging
 
 from config import constants
 from utils import ebay_trading_api, secret_dict
@@ -8,15 +7,16 @@ from pairs.helpers import check_profit
 from pairs.parsers import get_ebay_price_from_response, get_ebay_quantity_from_response
 from .interface import AmazonFinder, KeepaFinder
 
-logger = get_task_logger(__name__)
+logger = logging.getLogger('finder')
 am_finder = AmazonFinder()
 keepa_finder = KeepaFinder(secret_dict['keepa_key'])
 
 
-@shared_task(name='Run finder')
 @log_work_time('Run finder task')
 def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'aver') -> None:
     """ Find pairs in Amazon and eBay """
+
+    logger.info('For uri: {}'.format(uri))
 
     from pairs.models import Pair
     from users.models import CustomUser
@@ -40,10 +40,6 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         quantity = 0
         ebay_ids = []
         ebay_price = []
-
-        print('ASIN:', asin)
-        print('Title:', info_results[asin]['title'])
-        print('eBay ids:', info_results[asin]['ebay_ids'])
 
         for ebay_id in info_results[asin]['ebay_ids']:
             try:
@@ -89,9 +85,13 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
     pairs_number = 0
 
     for asin in keepa_finder(list(pairs.keys())):
+        logger.info('\n\nASIN: {0}\nTitle: {1}\neBay ids: {2}\n'.format(
+            asin, info_results[asin]['title'], info_results[asin]['ebay_ids']
+        ))
+
         pairs_number += 1
 
         if save:
             pairs[asin].save()
 
-    print('Pairs number:', pairs_number)
+    logger.info('Finished! Pairs number: {}'.format(pairs_number))
