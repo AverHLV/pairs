@@ -8,7 +8,7 @@ from numpy import isnan
 from lxml import etree
 
 from datetime import datetime, timedelta
-from re import sub
+from re import sub, search
 
 from config import constants
 from pairs.helpers import get_item_price_info
@@ -341,15 +341,26 @@ class AmazonFinder(object):
 
         ebay_ids = []
 
-        for product in products[6:]:
-            ebay_id = product.xpath('//a[@data-id]')
+        for product in products:
+            ebay_id = product.xpath('//a[@class="s-item__link"]')
 
             if not len(ebay_id):
                 continue
 
-            ebay_id = ebay_id[0].get('data-id')
+            ebay_id = ebay_id[0].get('href')
 
-            if ebay_id is None or len(ebay_id) != constants.ebay_id_length or ebay_id in ebay_ids:
+            if ebay_id is None:
+                continue
+
+            ebay_id = search(r'/\d{12}\?', ebay_id)
+
+            if ebay_id is None:
+                continue
+
+            ebay_id = ebay_id.group()[0]
+            ebay_id = ebay_id[1:-1]
+
+            if len(ebay_id) != constants.ebay_id_length and ebay_id in ebay_ids:
                 continue
 
             ebay_ids.append(ebay_id)
