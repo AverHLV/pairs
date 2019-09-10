@@ -222,6 +222,7 @@ request_delay = 60
 proxy_find_tries = 4
 threshold_month_number = 3
 title_n_words = 8
+max_sellers_number = 6
 rank_drop_percentage = 10
 
 stopwords = [
