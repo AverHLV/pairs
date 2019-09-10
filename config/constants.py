@@ -224,6 +224,7 @@ threshold_month_number = 3
 title_n_words = 8
 max_sellers_number = 6
 rank_drop_percentage = 10
+rank_drops_number = 1
 
 stopwords = [
     'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he',
