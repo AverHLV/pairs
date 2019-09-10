@@ -269,6 +269,8 @@ class AmazonFinder(object):
         # delete asins
 
         if len(values_to_delete):
+            logger.info('\nAsins to delete: {0}\nSend type: {1}'.format(values_to_delete, send_type))
+
             for value in values_to_delete:
                 self._asins.remove(value)
 
@@ -393,7 +395,7 @@ class KeepaFinder(object):
         self._products_history(products)
 
         return [asin for asin in self._products
-                if self._products[asin]['amazon']
+                if self.analyze_amazon(self._products[asin]['amazon'])
                 and self.analyze_sales(self._products[asin]['sales'])
                 and self.analyze_offers(self._products[asin]['offers'])]
 
@@ -447,7 +449,7 @@ class KeepaFinder(object):
             self._products[asins[product_index]] = {
                 'sales': list(sales[sales_index:]),
                 'offers': list(offers[offers_index:]),
-                'amazon': isnan(result[product_index]['data']['AMAZON'][0])
+                'amazon': list(result[product_index]['data']['AMAZON_time'])
             }
 
     @staticmethod
@@ -493,7 +495,23 @@ class KeepaFinder(object):
             if 100 - ((sales[i + 1] * 100) / sales[i]) >= constants.rank_drop_percentage:
                 drop_number += 1
 
-                if drop_number >= constants.threshold_month_number:
+                if drop_number >= constants.rank_drops_number:
                     return True
 
         return False
+
+    @staticmethod
+    def analyze_amazon(time_data: list) -> bool:
+        """ Set the mark for amazon, True if there is no Amazon in specified period, False - vice versa """
+
+        if not len(time_data):
+            return True
+
+        threshold = datetime.now().date()
+        threshold = threshold.replace(year=threshold.year - 1)
+
+        for index in range(len(time_data) - 1, -1, -1):
+            if time_data[index].date() >= threshold:
+                return False
+
+        return True
