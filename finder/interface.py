@@ -242,8 +242,9 @@ class AmazonFinder(object):
                 # check all ebay ids for one asin
 
                 ebay_ids_to_delete = []
+                asin_ebay_ids_len = len(self._products[asin]['ebay_ids'])
 
-                for ebay_id_number, response in enumerate(responses[i:i + len(self._products[asin]['ebay_ids'])]):
+                for ebay_id_number, response in enumerate(responses[i:i + asin_ebay_ids_len]):
                     if isinstance(response, str):
                         delivery_date = parse_delivery_time_response(etree.fromstring(response, self._parser))
 
@@ -263,7 +264,7 @@ class AmazonFinder(object):
                     self._products.pop(asin)
                     values_to_delete.append(asin)
 
-                i += len(self._products[asin]['ebay_ids'])
+                i += asin_ebay_ids_len
 
         # delete asins
 
