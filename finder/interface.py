@@ -359,13 +359,12 @@ class AmazonFinder(object):
 
             ebay_id = ebay_id.group()[0][1:-1]
 
-            if len(ebay_id) != constants.ebay_id_length and ebay_id in ebay_ids:
+            if len(ebay_id) != constants.ebay_id_length or ebay_id in ebay_ids:
                 continue
 
             ebay_ids.append(ebay_id)
 
         if len(ebay_ids):
-            print('Eaby ids:', ebay_ids)
             return ebay_ids
 
     def _get_prices(self) -> None:
