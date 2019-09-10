@@ -347,7 +347,7 @@ class AmazonFinder(object):
 
             ebay_id = ebay_id[0].get('data-id')
 
-            if ebay_id is None or len(ebay_id) != constants.ebay_id_length:
+            if ebay_id is None or len(ebay_id) != constants.ebay_id_length or ebay_id in ebay_ids:
                 continue
 
             ebay_ids.append(ebay_id)
@@ -472,6 +472,9 @@ class KeepaFinder(object):
     @staticmethod
     def analyze_offers(offers: list) -> bool:
         """ Set the mark for offers, False, if one seller for all time, True - vice versa """
+
+        if offers[-1] >= constants.max_sellers_number:
+            return False
 
         unique_values = list(set(offers))
 
