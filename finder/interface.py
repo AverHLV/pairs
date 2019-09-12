@@ -400,7 +400,7 @@ class KeepaFinder(object):
             raise ImproperlyConfigured('Invalid Keepa API secret key')
 
     @log_work_time('KeepaFinder')
-    def __call__(self, products: list, simple_check: bool = True) -> list:
+    def __call__(self, products: list, simple_check: bool = False) -> list:
         """ Find and analyze Amazon products statistics """
 
         if not len(products):
