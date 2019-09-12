@@ -12,9 +12,9 @@ from re import sub, search
 
 from config import constants
 from pairs.helpers import get_item_price_info
-from pairs.parsers import parse_delivery_time_response, get_rank_from_response
+from pairs.parsers import parse_delivery_time_response
 from decorators import log_work_time
-from utils import secret_dict, amazon_products_api
+from utils import secret_dict
 
 logger = logging.getLogger('finder')
 
@@ -75,12 +75,6 @@ class AmazonFinder(object):
             return {}
 
         self._run_loop(send_type='delivery')
-
-        if not len(self._asins):
-            logger.critical('No asins for checking ranks')
-            return {}
-
-        self._check_sales_ranks()
 
         if not len(self._asins):
             logger.critical('No asins for getting prices')
@@ -379,30 +373,6 @@ class AmazonFinder(object):
         if len(ebay_ids):
             return ebay_ids
 
-    def _check_sales_ranks(self) -> None:
-        """ Check ASINs sales ranks """
-
-        values_to_delete = []
-
-        for asin in self._asins:
-            try:
-                response = amazon_products_api.api.get_matching_product_for_id(amazon_products_api.region, 'ASIN',
-                                                                               [asin])
-
-            except amazon_products_api.connection_error as e:
-                logger.warning(e)
-
-            else:
-                rank = get_rank_from_response(response)
-
-                if not rank or rank > constants.rank_lower_value:
-                    values_to_delete.append(asin)
-
-        logger.info('\nAsins to delete: {0}\nSend type: {1}'.format(values_to_delete, 'Rank'))
-
-        for value in values_to_delete:
-            self._asins.remove(value)
-
     def _get_prices(self) -> None:
         """ Receive lowest prices for products """
 
@@ -440,10 +410,11 @@ class KeepaFinder(object):
         self._products = {}
         self._products_history(products)
 
-        return [asin for asin in self._products
-                if self.analyze_amazon(self._products[asin]['amazon'])
-                and self.analyze_sales(self._products[asin]['sales'])
-                and self.analyze_offers(self._products[asin]['offers'])]
+        return [asin for asin in self._products if self.analyze_sales(self._products[asin]['sales'])]
+
+        # if self.analyze_amazon(self._products[asin]['amazon'])
+        # and self.analyze_sales(self._products[asin]['sales'])
+        # and self.analyze_offers(self._products[asin]['offers'])]
 
     def _products_history(self, asins: list) -> None:
         """
@@ -532,8 +503,14 @@ class KeepaFinder(object):
         return True
 
     @staticmethod
-    def analyze_sales(sales: list) -> bool:
+    def analyze_sales(sales: list, check_rank: bool = True) -> bool:
         """ Set the mark for sales, True if there is a %month number% rank drops, False - vice versa """
+
+        if check_rank:
+            if sales[-1] > constants.rank_lower_value:
+                return False
+
+            return True
 
         drop_number = 0
 

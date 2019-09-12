@@ -83,10 +83,10 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
     # validate items Amazon data by Keepa and save found pairs
 
     pairs_asins = list(pairs.keys())
-    # logger.info('Pairs number before keepa check: {}'.format(len(pairs_asins)))
-    # pairs_asins_after_keepa = keepa_finder(pairs_asins)
+    logger.info('Pairs number before keepa check: {}'.format(len(pairs_asins)))
+    pairs_asins_after_keepa = keepa_finder(pairs_asins)
 
-    for asin in pairs_asins:
+    for asin in pairs_asins_after_keepa:
         logger.info('\n\nASIN: {0}\nTitle: {1}\neBay ids: {2}\n'.format(
             asin, info_results[asin]['title'], info_results[asin]['ebay_ids']
         ))
@@ -94,4 +94,4 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
         if save:
             pairs[asin].save()
 
-    logger.info('Finished! Pairs number: {}'.format(len(pairs_asins)))
+    logger.info('Finished! Pairs number: {}'.format(len(pairs_asins_after_keepa)))
