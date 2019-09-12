@@ -223,7 +223,6 @@ class AmazonFinder(object):
 
                         if ebay_ids is not None:
                             self._products[self._asins[i]]['ebay_ids'] = ebay_ids
-                            logger.info('ASIN: {0}, eBay ids number: {1}'.format(self._asins[i], len(ebay_ids)))
 
                         else:
                             self._products.pop(self._asins[i])
@@ -401,7 +400,7 @@ class KeepaFinder(object):
             raise ImproperlyConfigured('Invalid Keepa API secret key')
 
     @log_work_time('KeepaFinder')
-    def __call__(self, products: list) -> list:
+    def __call__(self, products: list, simple_check: bool = True) -> list:
         """ Find and analyze Amazon products statistics """
 
         if not len(products):
@@ -410,11 +409,14 @@ class KeepaFinder(object):
         self._products = {}
         self._products_history(products)
 
-        return [asin for asin in self._products if self.analyze_sales(self._products[asin]['sales'])]
+        if simple_check:
+            return [asin for asin in self._products if self.analyze_sales(self._products[asin]['sales'], True)]
 
-        # if self.analyze_amazon(self._products[asin]['amazon'])
-        # and self.analyze_sales(self._products[asin]['sales'])
-        # and self.analyze_offers(self._products[asin]['offers'])]
+        else:
+            return [asin for asin in self._products
+                    if self.analyze_sales(self._products[asin]['sales'], False)
+                    and self.analyze_amazon(self._products[asin]['amazon'])
+                    and self.analyze_offers(self._products[asin]['offers'])]
 
     def _products_history(self, asins: list) -> None:
         """
@@ -503,7 +505,7 @@ class KeepaFinder(object):
         return True
 
     @staticmethod
-    def analyze_sales(sales: list, check_rank: bool = True) -> bool:
+    def analyze_sales(sales: list, check_rank: bool) -> bool:
         """ Set the mark for sales, True if there is a %month number% rank drops, False - vice versa """
 
         if check_rank:
@@ -512,16 +514,17 @@ class KeepaFinder(object):
 
             return True
 
-        drop_number = 0
+        else:
+            drop_number = 0
 
-        for i in range(len(sales) - 1):
-            if 100 - ((sales[i + 1] * 100) / sales[i]) >= constants.rank_drop_percentage:
-                drop_number += 1
+            for i in range(len(sales) - 1):
+                if 100 - ((sales[i + 1] * 100) / sales[i]) >= constants.rank_drop_percentage:
+                    drop_number += 1
 
-                if drop_number >= constants.rank_drops_number:
-                    return True
+                    if drop_number >= constants.rank_drops_number:
+                        return True
 
-        return False
+            return False
 
     @staticmethod
     def analyze_amazon(time_data: list) -> bool:
