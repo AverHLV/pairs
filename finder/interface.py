@@ -223,6 +223,7 @@ class AmazonFinder(object):
 
                         if ebay_ids is not None:
                             self._products[self._asins[i]]['ebay_ids'] = ebay_ids
+                            logger.info('ASIN: {0}, eBay ids number: {1}'.format(self._asins[i], len(ebay_ids)))
 
                         else:
                             self._products.pop(self._asins[i])
