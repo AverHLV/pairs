@@ -12,9 +12,9 @@ from re import sub, search
 
 from config import constants
 from pairs.helpers import get_item_price_info
-from pairs.parsers import parse_delivery_time_response
+from pairs.parsers import parse_delivery_time_response, get_rank_from_response
 from decorators import log_work_time
-from utils import secret_dict
+from utils import secret_dict, amazon_products_api
 
 logger = logging.getLogger('finder')
 
@@ -75,6 +75,12 @@ class AmazonFinder(object):
             return {}
 
         self._run_loop(send_type='delivery')
+
+        if not len(self._asins):
+            logger.critical('No asins for checking ranks')
+            return {}
+
+        self._check_sales_ranks()
 
         if not len(self._asins):
             logger.critical('No asins for getting prices')
@@ -223,6 +229,7 @@ class AmazonFinder(object):
 
                         if ebay_ids is not None:
                             self._products[self._asins[i]]['ebay_ids'] = ebay_ids
+                            logger.info('ASIN: {0}, eBay ids number: {1}'.format(self._asins[i], len(ebay_ids)))
 
                         else:
                             self._products.pop(self._asins[i])
@@ -366,6 +373,30 @@ class AmazonFinder(object):
 
         if len(ebay_ids):
             return ebay_ids
+
+    def _check_sales_ranks(self) -> None:
+        """ Check ASINs sales ranks """
+
+        values_to_delete = []
+
+        for asin in self._asins:
+            try:
+                response = amazon_products_api.api.get_matching_product_for_id(amazon_products_api.region, 'ASIN',
+                                                                               [asin])
+
+            except amazon_products_api.connection_error as e:
+                logger.warning(e)
+
+            else:
+                rank = get_rank_from_response(response)
+
+                if not rank or rank > constants.rank_lower_value:
+                    values_to_delete.append(asin)
+
+        logger.info('\nAsins to delete: {0}\nSend type: {1}'.format(values_to_delete, 'Rank'))
+
+        for value in values_to_delete:
+            self._asins.remove(value)
 
     def _get_prices(self) -> None:
         """ Receive lowest prices for products """
@@ -520,8 +551,7 @@ class KeepaFinder(object):
         threshold = datetime.now().date()
         threshold = threshold.replace(year=threshold.year - 1)
 
-        for index in range(len(time_data) - 1, -1, -1):
-            if time_data[index].date() >= threshold:
-                return False
+        if time_data[-1].date() >= threshold:
+            return False
 
         return True
