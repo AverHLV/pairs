@@ -334,7 +334,12 @@ class AmazonFinder(object):
             title = sub(r' {2,}', ' ', ' ' + title + ' ')
             title = sub(r' ({0}) '.format('|'.join(constants.stopwords)), ' ', title)
             title = sub(r'^ | $', '', title)
-            self._products[asin] = {'title': ' '.join(title.split()[:constants.title_n_words])}
+            words = title.split()
+
+            if len(words) > constants.title_max_words:
+                words = words[:constants.title_n_words]
+
+            self._products[asin] = {'title': ' '.join(words)}
 
     @staticmethod
     def _find_ebay_products_info(tree: etree) -> (list, None):
