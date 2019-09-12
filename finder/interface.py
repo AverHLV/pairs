@@ -520,8 +520,7 @@ class KeepaFinder(object):
         threshold = datetime.now().date()
         threshold = threshold.replace(year=threshold.year - 1)
 
-        for index in range(len(time_data) - 1, -1, -1):
-            if time_data[index].date() >= threshold:
-                return False
+        if time_data[-1].date() >= threshold:
+            return False
 
         return True
