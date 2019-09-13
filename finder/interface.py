@@ -347,12 +347,7 @@ class AmazonFinder(object):
         ebay_ids = []
 
         for product in products:
-            ebay_id = product.xpath('//a[@class="s-item__link"]')
-
-            if not len(ebay_id):
-                continue
-
-            ebay_id = ebay_id[0].get('href')
+            ebay_id = product.xpath('.//a[@class="s-item__link"]')[0].get('href')
 
             if ebay_id is None:
                 continue
