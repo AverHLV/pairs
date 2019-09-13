@@ -219,9 +219,6 @@ class AmazonFinder(object):
                         self._find_products_info(page)
 
                     else:
-                        with open('pages/page_{}.html'.format(i), 'w') as file:
-                            file.write(responses[i])
-
                         ebay_ids = self._find_ebay_products_info(page)
 
                         if ebay_ids is not None:
