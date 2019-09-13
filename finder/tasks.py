@@ -84,7 +84,6 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
 
     pairs_asins = list(pairs.keys())
     logger.info('Pairs number before keepa check: {}'.format(len(pairs_asins)))
-    '''
     pairs_asins_after_keepa = keepa_finder(pairs_asins)
 
     for asin in pairs_asins_after_keepa:
@@ -96,4 +95,3 @@ def run_finder(uri: str, use_proxy: bool, save: bool = False, username: str = 'a
             pairs[asin].save()
 
     logger.info('Finished! Pairs number: {}'.format(len(pairs_asins_after_keepa)))
-    '''
