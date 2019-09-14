@@ -220,6 +220,7 @@ return_last_n_lines = 300
 timeout = 60
 request_delay = 60
 proxy_find_tries = 4
+check_location_tries = 6
 threshold_month_number = 3
 title_n_words = 10
 title_max_words = 12

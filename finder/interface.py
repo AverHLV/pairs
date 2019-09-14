@@ -16,6 +16,8 @@ from pairs.parsers import parse_delivery_time_response
 from decorators import log_work_time
 from utils import secret_dict
 
+CURRENT_AMAZON_LOCATION = 'Ukraine'
+
 logger = logging.getLogger('finder')
 
 
@@ -25,18 +27,45 @@ class AmazonFinder(object):
     _headers = {'Connection': 'close'}
     _parser = etree.HTMLParser()
     _timeout = ClientTimeout(total=constants.timeout)
+    _amazon_uri = 'https://www.amazon.com/'
+    _amazon_location_uri = 'https://www.amazon.com/gp/delivery/ajax/address-change.html'
     _ebay_uri = 'https://www.ebay.com/sch/i.html'
     _ebay_item_uri = 'https://www.ebay.com/itm/'
     _ebay_params = {'_nkw': '', '_ipg': 100, 'LH_BIN': 1, 'LH_ItemCondition': 3, 'LH_PrefLoc': 1, 'LH_RPA': 1}
     _proxy_uri = 'https://proxy11.com/api/proxy.txt?key={}&country=United+States'
 
-    def __init__(self, uri: str = None, use_proxy: bool = False, proxy_tries: int = constants.proxy_find_tries):
+    _amazon_location_headers = {
+        'accept': 'text/html,*/*',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'uk',
+        'content-type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'dnt': '1',
+        'x-requested-with': 'XMLHttpRequest'
+    }
+
+    _amazon_location_data = {
+        'locationType': 'LOCATION_INPUT',
+        'zipCode': '',
+        'storeContext': 'generic',
+        'deviceType': 'web',
+        'pageType': 'Gateway',
+        'actionSource': 'glow'
+    }
+
+    def __init__(self,
+                 uri: str = None,
+                 amazon_location: str = '10001',
+                 use_proxy: bool = False,
+                 proxy_tries: int = constants.proxy_find_tries,
+                 location_tries: int = constants.check_location_tries):
         """
         AmazonFinder initialization
 
         :param uri: Amazon search uri
+        :param amazon_location: zip code for setting location on Amazon
         :param use_proxy: use proxy for requests to Amazon or not
         :param proxy_tries: number of tries to find alive proxy
+        :param location_tries: number of tries to change location on Amazon
         """
 
         if uri is None:
@@ -49,11 +78,13 @@ class AmazonFinder(object):
         self._products = {}
 
         self._use_proxy = use_proxy
+        self._location_tries = location_tries
 
         if self._use_proxy:
             self._proxy_uri = self._proxy_uri.format(secret_dict['proxy_api_key']) + '&limit={}'.format(proxy_tries)
 
         self._amazon_uri = sub(r'&page=\d+', '', uri) + '&page={page_number}'
+        self._amazon_location_data['zipCode'] = amazon_location
 
     @log_work_time('AmazonFinder')
     def __call__(self, *args, **kwargs) -> dict:
@@ -87,16 +118,22 @@ class AmazonFinder(object):
 
     async def _request(self,
                        uri: str,
+                       request_type: str = 'GET',
                        search_term: str = None,
                        params: dict = None,
+                       headers: dict = None,
+                       data: dict = None,
                        proxy: str = None,
                        delay: bool = False) -> str:
         """
         Send GET request
 
         :param uri: request uri
+        :param request_type: request type, 'GET' or 'POST'
         :param search_term: uri parameters
         :param params: uri parameters
+        :param headers: request headers dictionary
+        :param data: request payload data
         :param proxy: request proxy
         :param delay: add async sleep before request
         :return: html str response
@@ -110,8 +147,16 @@ class AmazonFinder(object):
             params = self._ebay_params
 
         try:
-            async with self._session.get(uri, params=params, proxy=proxy) as response:
-                return await response.text()
+            if request_type == 'GET':
+                async with self._session.get(uri, params=params, headers=headers, proxy=proxy) as response:
+                    return await response.text()
+
+            elif request_type == 'POST':
+                async with self._session.post(uri, params=params, data=data, headers=headers, proxy=proxy) as response:
+                    return await response.text()
+
+            else:
+                raise ValueError('Wrong request type: {}'.format(request_type))
 
         except client_exceptions.ServerTimeoutError:
             logger.critical('Request timeout error, url: {}'.format(uri))
@@ -150,6 +195,27 @@ class AmazonFinder(object):
 
         else:
             logger.critical('Getting alive proxy failed')
+
+    async def _set_location(self) -> None:
+        """ Change location on Amazon """
+
+        await self._request(self._amazon_uri)
+
+        await self._request(
+            self._amazon_location_uri,
+            request_type='POST',
+            headers=self._amazon_location_headers,
+            data=self._amazon_location_data
+        )
+
+        for _ in range(self._location_tries):
+            response = await self._request(self._amazon_uri)
+
+            if self._check_location(etree.fromstring(response, self._parser)):
+                break
+
+        else:
+            logger.warning('Location change failed')
 
     async def _get_first_page(self) -> None:
         """ Get first products page for number of pages """
@@ -286,6 +352,10 @@ class AmazonFinder(object):
                 if self._use_proxy:
                     loop.run_until_complete(self._find_proxy())
 
+                # try to set location
+
+                loop.run_until_complete(self._set_location())
+
                 # start sending requests
 
                 if self._pages_number is None:
@@ -298,6 +368,7 @@ class AmazonFinder(object):
                     loop.run_until_complete(self._send_requests(send_type))
 
             else:
+                self._session.cookie_jar.clear()
                 loop.run_until_complete(self._send_requests(send_type))
 
         finally:
@@ -366,6 +437,19 @@ class AmazonFinder(object):
 
         if len(ebay_ids):
             return ebay_ids
+
+    @staticmethod
+    def _check_location(tree: etree):
+        """ Check current session location on Amazon """
+
+        try:
+            span = tree.xpath('//span[@id="glow-ingress-line2"]')[0]
+
+        except IndexError:
+            return False
+
+        else:
+            return span.text != CURRENT_AMAZON_LOCATION
 
     def _get_prices(self) -> None:
         """ Receive lowest prices for products """
