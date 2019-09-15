@@ -1,6 +1,6 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from django.contrib.auth import views as auth_views
-from . import views
+from . import views, views_api
 
 urlpatterns = [
     path('login/', auth_views.login, {
@@ -20,4 +20,9 @@ urlpatterns = [
     re_path(r'^activate/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$', views.activate),
     re_path(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
             views.reset_password_confirm, name='password_reset_confirm'),
+
+    # rest api urls
+
+    path('api/', include('rest_auth.urls')),
+    path('api/users/<str:username>/', views_api.GetUser.as_view())
 ]

@@ -27,9 +27,6 @@ class KeepaTest(TestCase):
             self.good_sales.append(start_value)
             start_value *= 0.5
 
-        self.good_products = ['B07QH6F56T']
-        self.bad_products = ['B01BB3VLNY']
-
     def test_actualize(self):
         index = self.keepa.actualize(self.dates)
         self.assertTrue(index == 1)
@@ -41,15 +38,8 @@ class KeepaTest(TestCase):
         self.assertTrue(index == 0)
 
     def test_analyze_sales(self):
-        mark = self.keepa.analyze_sales(self.good_sales)
+        mark = self.keepa.analyze_sales(self.good_sales, check_rank=False)
         self.assertTrue(mark)
 
-        mark = self.keepa.analyze_sales(self.bad_sales)
+        mark = self.keepa.analyze_sales(self.bad_sales, check_rank=False)
         self.assertTrue(not mark)
-
-    def test_keepa_call(self):
-        products = self.keepa(self.good_products)
-        self.assertTrue(len(products))
-
-        products = self.keepa(self.bad_products)
-        self.assertTrue(not len(products))

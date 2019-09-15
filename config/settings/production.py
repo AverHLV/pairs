@@ -103,6 +103,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'django_celery_beat',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_auth',
     'pairs',
     'stats',
     'users',
@@ -121,6 +124,20 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'middleware.HttpCodesHandler'
 ]
+
+# REST API settings
+
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ),
+
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '50/hour',
+        'user': '100/hour'
+    }
+}
 
 ROOT_URLCONF = 'config.urls'
 
