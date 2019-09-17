@@ -19,7 +19,7 @@ class GetUserTest(APITestCase):
     def test_getting_user_no_auth(self):
         request = self.factory.get('/auth/api/users/')
         response = GetUser.as_view()(request, username='user')
-        self.assertTrue(response.status_code == 403)
+        self.assertTrue(response.status_code == 401)
 
     def test_getting_user_not_found(self):
         request = self.factory.get('/auth/api/users/')

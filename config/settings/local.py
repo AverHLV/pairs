@@ -122,6 +122,10 @@ MIDDLEWARE = [
 # REST API settings
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'users.authentication.ExpirationAuth',
+    ),
+
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle'
@@ -181,7 +185,7 @@ DATABASES = {
         'PASSWORD': secret_dict['db_pass'],
         'HOST': secret_dict['db_host'],
         'PORT': secret_dict['db_port'],
-        'ATOMIC_REQUESTS': True
+        'ATOMIC_REQUESTS': False
     }
 }
 
