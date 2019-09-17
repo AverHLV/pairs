@@ -113,6 +113,7 @@ profit_percent = [
 profit_names_special = ['Oleksandr_Yamkovyi', 'Diatlenko']
 profit_percentage_special = 0.2
 note_preview_length = 40
+token_expiration_hours = 4
 
 # utils
 con_tries = 5
