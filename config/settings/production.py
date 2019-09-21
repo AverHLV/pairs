@@ -143,6 +143,11 @@ REST_FRAMEWORK = {
     }
 }
 
+REST_AUTH_SERIALIZERS = {
+    'TOKEN_SERIALIZER': 'users.serializers.TokenSerializer',
+    'USER_DETAILS_SERIALIZER': 'users.serializers.UserSerializer'
+}
+
 ROOT_URLCONF = 'config.urls'
 
 BASE_DIR = Path(__file__).ancestor(3)

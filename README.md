@@ -14,5 +14,4 @@ Amazon-eBay pairs manager for small teams.
 Backend tasks powered by celery and django-celery-beat scheduler.
 
 ## REST API endpoints
-* `api/`: [django-rest-auth endpoints](https://django-rest-auth.readthedocs.io/en/latest/api_endpoints.html);
-* `api/users/<str:username>/`: retrieve user info like `username`, `profit` and `paris_count`.
+* `/auth/api/`: [django-rest-auth endpoints](https://django-rest-auth.readthedocs.io/en/latest/api_endpoints.html).
