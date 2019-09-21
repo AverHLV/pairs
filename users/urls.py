@@ -1,6 +1,6 @@
 from django.urls import path, re_path, include
 from django.contrib.auth import views as auth_views
-from . import views, views_api
+from . import views
 
 urlpatterns = [
     path('login/', auth_views.login, {
@@ -23,6 +23,5 @@ urlpatterns = [
 
     # rest api urls
 
-    path('api/', include('rest_auth.urls')),
-    path('api/users/<str:username>/', views_api.GetUser.as_view())
+    path('api/', include('rest_auth.urls'))
 ]
