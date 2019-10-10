@@ -111,7 +111,7 @@ class Pair(TimeStamped):
                     response = ebay_trading_api.api.execute('GetItem', {'ItemID': ebay_id})
 
                 except ebay_trading_api.connection_error as e:
-                    logger.critical('eBay api unhandled error: {0}.'.format(e.response.dict()))
+                    logger.critical('eBay ID: {0}, eBay api unhandled error: {1}.'.format(ebay_id, e.response.dict()))
                     return
 
                 except ConnectionError:
