@@ -3,12 +3,12 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
-    path('login/', auth_views.login, {
+    path('login/', auth_views.LoginView.as_view(**{
         'template_name': 'login_form.html',
         'extra_context': {'action': '/auth/login/', 'button_text': 'Log in'}
-    }),
+    })),
 
-    path('logout/', auth_views.logout, {'next_page': '/'}),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/')),
     path('signup/', views.signup),
     path('reset/', views.reset_password),
     path('reset/change/<int:uid>/', views.reset_password_input),
