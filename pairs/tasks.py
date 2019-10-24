@@ -615,8 +615,16 @@ def process_order(order):
         quantity = int(response_order.parsed['OrderItems']['OrderItem']['QuantityOrdered']['value'])
         new_order.items_counts = {item.id: quantity}
 
-        new_order.amazon_price = float(response_order.parsed['OrderItems']['OrderItem']['ItemPrice']['Amount']
-                                       ['value'])
+        item_price = float(response_order.parsed['OrderItems']['OrderItem']['ItemPrice']['Amount']['value'])
+
+        try:
+            item_tax = float(response_order.parsed['OrderItems']['OrderItem']['ItemTax']['Amount']['value'])
+
+        except (KeyError, ValueError):
+            item_tax = 0
+
+        new_order.amazon_price = item_price + item_tax
+
         items.append(item)
 
     else:
@@ -635,7 +643,16 @@ def process_order(order):
             else:
                 items_counts[item.id] = int(item['QuantityOrdered']['value'])
 
-                amazon_price += float(item['ItemPrice']['Amount']['value'])
+                item_price = float(item['ItemPrice']['Amount']['value'])
+
+                try:
+                    item_tax = float(item['ItemTax']['Amount']['value'])
+
+                except (KeyError, ValueError):
+                    item_tax = 0
+
+                amazon_price += item_price + item_tax
+
                 items.append(item)
 
         new_order.items_counts = items_counts
