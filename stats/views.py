@@ -101,7 +101,7 @@ def graphs(request):
     fig4 = plt.figure()
 
     stats = RepricerStats.objects.filter(created__gte=datetime.now(get_current_timezone()) - timedelta(
-        hours=constants.repricer_stats_hours))
+        hours=constants.repricer_stats_hours)).order_by('created')
 
     if len(stats):
         buybox_counts, minimum_price_counts, dates = [], [], []
