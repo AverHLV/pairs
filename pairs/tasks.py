@@ -527,18 +527,31 @@ def delete_pairs_unsuitable():
 
 
 @shared_task(name='Check new orders')
-def check_orders():
+def check_orders(token: str = None) -> None:
     """ Get last day orders and create Order objects in db """
 
-    date = datetime.now() - timedelta(days=1) + timedelta(hours=8)
-    date = datetime.strftime(date, '%Y-%m-%dT%H:%M:%S')
+    if token is None:
+        date = datetime.now() - timedelta(days=1) + timedelta(hours=8)
+        date = datetime.strftime(date, '%Y-%m-%dT%H:%M:%S')
 
-    try:
-        response = amazon_orders_api.api.list_orders(created_after=date, marketplaceids=[amazon_orders_api.region])
+        try:
+            response = amazon_orders_api.api.list_orders(created_after=date, marketplaceids=[amazon_orders_api.region])
 
-    except amazon_orders_api.connection_error as e:
-        logger.critical('Amazon Orders api unhandled error: {0}.'.format(e))
-        return
+        except amazon_orders_api.connection_error as e:
+            logger.critical('Amazon Orders api unhandled error: {0}.'.format(e))
+            return
+
+    else:
+        logger.info(f'Check orders with token: {token}.')
+
+        try:
+            response = amazon_orders_api.api.list_orders(next_token=token)
+
+        except amazon_orders_api.connection_error as e:
+            logger.critical('Amazon Orders api unhandled error: {0}.'.format(e))
+            return
+
+    # process orders
 
     if not len(response.parsed['Orders']):
         logger.warning('There are no orders in response.')
@@ -554,10 +567,22 @@ def check_orders():
         for order in response.parsed['Orders']['Order']:
             process_order(order)
 
-    logger.info('Check for new orders complete.')
+    # check next token
+
+    try:
+        response.parsed['NextToken']['value']
+
+    except KeyError:
+        pass
+
+    else:
+        check_orders(token=response.parsed['NextToken']['value'])
+
+    if token is None:
+        logger.info('Check for new orders complete.')
 
 
-def process_order(order):
+def process_order(order) -> None:
     """ Process Amazon order from ListOrders response """
 
     if order['OrderStatus']['value'] != 'Unshipped':
@@ -589,74 +614,100 @@ def process_order(order):
             except KeyError:
                 continue
 
-    # parse order items
+    # get first list response
 
-    items = []
+    responses = []
 
     try:
-        response_order = amazon_orders_api.api.list_order_items(new_order.order_id)
+        responses.append(amazon_orders_api.api.list_order_items(new_order.order_id))
 
     except amazon_orders_api.connection_error as e:
         logger.warning('Amazon Orders api unhandled error: {0}.'.format(e))
         return
 
-    try:
-        response_order.parsed['OrderItems']['OrderItem'][0]
+    # get another lists if exists
 
-    except KeyError:
-        # in one item case
-
+    while True:
         try:
-            item = Pair.objects.get(asin=response_order.parsed['OrderItems']['OrderItem']['ASIN']['value'])
+            responses[-1].parsed['NextToken']['value']
 
-        except Pair.DoesNotExist:
-            return
+        except KeyError:
+            break
 
-        quantity = int(response_order.parsed['OrderItems']['OrderItem']['QuantityOrdered']['value'])
-        new_order.items_counts = {item.id: quantity}
-
-        item_price = float(response_order.parsed['OrderItems']['OrderItem']['ItemPrice']['Amount']['value'])
-
-        try:
-            item_tax = float(response_order.parsed['OrderItems']['OrderItem']['ItemTax']['Amount']['value'])
-
-        except (KeyError, ValueError):
-            item_tax = 0
-
-        new_order.amazon_price = item_price + item_tax
-
-        items.append(item)
-
-    else:
-        # in multiple items case
-
-        amazon_price = 0
-        items_counts = {}
-
-        for item in response_order.parsed['OrderItems']['OrderItem']:
+        else:
             try:
-                item = Pair.objects.get(asin=item['ASIN']['value'])
+                responses.append(
+                    amazon_orders_api.api.list_order_items(next_token=responses[-1].parsed['NextToken']['value'])
+                )
+
+            except amazon_orders_api.connection_error as e:
+                logger.warning('Amazon Orders api unhandled error: {0}.'.format(e))
+                break
+
+    # process responses
+
+    items = []
+    new_order.amazon_price = 0
+    new_order.items_counts = {}
+
+    for response_order in responses:
+        try:
+            response_order.parsed['OrderItems']['OrderItem'][0]
+
+        except KeyError:
+            # in one item case
+
+            try:
+                item = Pair.objects.get(asin=response_order.parsed['OrderItems']['OrderItem']['ASIN']['value'])
 
             except Pair.DoesNotExist:
-                pass
+                continue
 
-            else:
-                items_counts[item.id] = int(item['QuantityOrdered']['value'])
+            quantity = int(response_order.parsed['OrderItems']['OrderItem']['QuantityOrdered']['value'])
+            new_order.items_counts.update({item.id: quantity})
 
-                item_price = float(item['ItemPrice']['Amount']['value'])
+            item_price = float(response_order.parsed['OrderItems']['OrderItem']['ItemPrice']['Amount']['value'])
 
+            try:
+                item_tax = float(response_order.parsed['OrderItems']['OrderItem']['ItemTax']['Amount']['value'])
+
+            except (KeyError, ValueError):
+                item_tax = 0
+
+            new_order.amazon_price += item_price + item_tax
+
+            items.append(item)
+
+        else:
+            # in multiple items case
+
+            amazon_price = 0
+            items_counts = {}
+
+            for item in response_order.parsed['OrderItems']['OrderItem']:
                 try:
-                    item_tax = float(item['ItemTax']['Amount']['value'])
+                    item = Pair.objects.get(asin=item['ASIN']['value'])
 
-                except (KeyError, ValueError):
-                    item_tax = 0
+                except Pair.DoesNotExist:
+                    pass
 
-                amazon_price += item_price + item_tax
+                else:
+                    items_counts[item.id] = int(item['QuantityOrdered']['value'])
 
-                items.append(item)
+                    item_price = float(item['ItemPrice']['Amount']['value'])
 
-        new_order.items_counts = items_counts
-        new_order.amazon_price = amazon_price
+                    try:
+                        item_tax = float(item['ItemTax']['Amount']['value'])
+
+                    except (KeyError, ValueError):
+                        item_tax = 0
+
+                    amazon_price += item_price + item_tax
+
+                    items.append(item)
+
+            new_order.items_counts.update(items_counts)
+            new_order.amazon_price += amazon_price
 
     if not len(items):
         return
