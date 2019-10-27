@@ -531,7 +531,7 @@ def check_orders(token: str = None) -> None:
     """ Get last day orders and create Order objects in db """
 
     if token is None:
-        date = datetime.now() - timedelta(days=1) + timedelta(hours=8)
+        date = datetime.now() - timedelta(days=3)
         date = datetime.strftime(date, '%Y-%m-%dT%H:%M:%S')
 
         try:
