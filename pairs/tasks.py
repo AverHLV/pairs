@@ -684,20 +684,20 @@ def process_order(order) -> None:
             amazon_price = 0
             items_counts = {}
 
-            for item in response_order.parsed['OrderItems']['OrderItem']:
+            for response_item in response_order.parsed['OrderItems']['OrderItem']:
                 try:
-                    item = Pair.objects.get(asin=item['ASIN']['value'])
+                    item = Pair.objects.get(asin=response_item['ASIN']['value'])
 
                 except Pair.DoesNotExist:
                     pass
 
                 else:
-                    items_counts[item.id] = int(item['QuantityOrdered']['value'])
+                    items_counts[item.id] = int(response_item['QuantityOrdered']['value'])
 
-                    item_price = float(item['ItemPrice']['Amount']['value'])
+                    item_price = float(response_item['ItemPrice']['Amount']['value'])
 
                     try:
-                        item_tax = float(item['ItemTax']['Amount']['value'])
+                        item_tax = float(response_item['ItemTax']['Amount']['value'])
 
                     except (KeyError, ValueError):
                         item_tax = 0
