@@ -248,13 +248,19 @@ def get_buybox_price_from_response(price_info, response):
         response.parsed[0]
 
     except KeyError:
-        if not len(response.parsed['Product']['CompetitivePricing']['CompetitivePrices']):
+        try:
+            if not len(response.parsed['Product']['CompetitivePricing']['CompetitivePrices']):
+                price_info[0].append(0)
+                price_info[0].append(None)
+
+            else:
+                comp_price_dict = response.parsed['Product']['CompetitivePricing']['CompetitivePrices'][
+                    'CompetitivePrice']
+                fill_price_info(0)
+
+        except KeyError:
             price_info[0].append(0)
             price_info[0].append(None)
-
-        else:
-            comp_price_dict = response.parsed['Product']['CompetitivePricing']['CompetitivePrices']['CompetitivePrice']
-            fill_price_info(0)
 
     else:
         for i in range(len(response.parsed)):
