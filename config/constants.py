@@ -61,10 +61,11 @@ profit_buffer = 1
 min_order_owner_profit = 0.5
 
 profit_intervals = {
-    (0, 20): 1.22,
-    (20, 30): 1.2,
-    (30, 50): 1.17,
-    (50, inf): 1.12
+    (0, 10): 1.3,
+    (10, 20): 1.27,
+    (20, 30): 1.25,
+    (30, 40): 1.22,
+    (40, inf): 1.12,
 }
 
 amazon_approximate_price_percent = {
