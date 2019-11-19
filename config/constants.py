@@ -65,7 +65,7 @@ profit_intervals = {
     (10, 20): 1.27,
     (20, 30): 1.25,
     (30, 40): 1.22,
-    (40, inf): 1.12,
+    (40, inf): 1.2,
 }
 
 amazon_approximate_price_percent = {
